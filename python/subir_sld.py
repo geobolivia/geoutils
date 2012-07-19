@@ -2,7 +2,8 @@
 
 # Objeto: utilizando la libreria gsconfig, publicar un SLD en el GeoServer
 #
-# Parametros: ninguno
+# Parametros: 
+# * archivo: el archivo sld a subir
 
 from geoserver.catalog import Catalog
 import sys
