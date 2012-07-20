@@ -3,10 +3,10 @@
 # Objeto: utilizando la libreria gsconfig, publicar un SLD en el GeoServer
 #
 # Uso:
-#   subir_sld /path/to/archivo
+#   subir_sld /path/to/archivos
 #
 # Parametros: 
-# * archivo: el archivo sld a subir
+# * archivos: el archivo sld a subir / o la carpeta con archivos sld
 
 # Excepciones manejadas por gsconfig
 
@@ -31,11 +31,43 @@ import argparse
 # utilizamos argparse (http://docs.python.org/howto/argparse.html)
 # * creacion del parser
 parser = argparse.ArgumentParser()
+# * funcion para abrir un archivo, verificando que es de tipo SLD
+def test_and_open_sld_file(files,fileName):
+	# parece un archivo SLD (extension .sld) ?
+	fileBase, fileExtension = os.path.splitext(fileName)
+	if fileExtension == ".sld":
+		# Parece un archivo SLD - probamos de abrirlo
+		try:
+			f = open(fileName,'rt')
+			# Lo pudimos abrir - anadimos el archivo abierto
+			files.append(f)
+		except IOError as e:
+			# No se puede abrir
+			pass
+	return files
+# * funcion para abrir el archivo SLD, o los archivos SLD si el argumento es una carpeta
+# * devuelve una lista de los archivos SLD abiertos para lectura en modo texto
+def parse_archivos(path):
+	# Creamos la lista de archivos SLD abiertos
+	files = []
+
+	if os.path.isfile(path):
+		# parece un archivo
+		files = test_and_open_sld_file(files,path)
+	elif os.path.isdir(path):
+		# parece una carpeta, probamos de abrir sus archivos
+		fileNames=os.listdir(path)
+		for fileName in	fileNames:
+			files = test_and_open_sld_file(files,os.path.join(path, fileName))
+
+	return files
+
 # * especificacion del argumento archivo, de tipo "argparse.FileType('r')", es decir que es un archivo abierto.
-parser.add_argument("archivo", 
-	help="Archivo SLD a subir en el servidor GeoServer de dev de GeoBolivia",
-	type=argparse.FileType('r')
+parser.add_argument("archivos", 
+	help="archivo SLD / carpeta de archivos SLD - para subir en el servidor GeoServer de dev de GeoBolivia",
+	type=parse_archivos,
 	)
+
 # * hacemos un parsing, con verificacion, de los argumentos
 args = parser.parse_args()
 
@@ -59,19 +91,16 @@ def connectar_geoserver(stdscr):
 
 	return cat
 
-# Funcion de recuperacion de los argumentos
-def recuperar_archivo(stdscr, archivo):
-	# Verificamos que la extension es SLD (.sld)
+# Crear el nombre del estilo
+def crear_nombre_estilo(archivo):
+	# Recuperamos el nombre de archivo sin la extension
 	fileName, fileExtension = os.path.splitext(archivo.name)
-	if fileExtension != ".sld":
-		stdscr.addstr("El archivo %s no tiene la extension SLD\n" % archivo.name)
-		return None,None
 
 	# Base del archivo (nombre del estilo)
 	nombreEstilo = os.path.basename(fileName)
 
-	# Todo esta OK - retornamos el archivo
-	return archivo.name,nombreEstilo
+	# Retornamos el nombre del estilo
+	return nombreEstilo
 
 # Funcion llamada justo antes de salir
 def salir(stdscr,mensaje=""):
@@ -85,12 +114,11 @@ def salir(stdscr,mensaje=""):
 
 def subir_sld(stdscr, cat, archivo):
 	# Recuperar el nombre del archivo
-	nombreArchivo,nombreEstilo = recuperar_archivo(stdscr,archivo)
-	if not nombreArchivo:
-		return None
+	nombreEstilo = crear_nombre_estilo(archivo)
 
 	# Salida grafica
-	stdscr.addstr("Subimos el archivo %s de estilo en el servidor http://www-dev.geo.gob.bo/geoserver/\n" % nombreArchivo)
+	stdscr.addstr("\n* %s\n" % nombreEstilo)
+
 	# Miramos si ya existe el estilo - preguntar que hacer
 	try:
 		estilo = cat.get_style(nombreEstilo)
@@ -102,7 +130,7 @@ def subir_sld(stdscr, cat, archivo):
 		i = 3
 		while i > 0:
 			i -=1
-			stdscr.addstr("\nEl estilo '%s' ya existe en el servidor. [R]emplazar, [D]ejar la version anterior o [B]orrarla sin subir la nueva ?\n" % estilo.name)
+			stdscr.addstr("\nEl estilo '%s' ya existe en el servidor.\n[R]emplazar, [D]ejar la version anterior o [B]orrarla sin subir la nueva ?\n" % estilo.name)
 			c = stdscr.getch()
 			if c == ord('R'):
 				# Existe el estilo, subimos una nueva version (remplazamos)
@@ -143,14 +171,23 @@ def subir_sld(stdscr, cat, archivo):
 
 
 def main(stdscr,args):
-	# Verificamos que funciono la conexion
+	# Avisamos si no hay archivos
+	if not len(args.archivos):
+		return salir(stdscr, "Ningun archivo SLD para procesar\n")
+
+	# Probamos la conexion a GeoServer
 	try:
 		cat =  connectar_geoserver(stdscr)
 	except Exception as e:
 		return salir(stdscr,"La conexion con el GeoServer fallo\n")
 
-	# Subir el archivo SLD
-	subir_sld(stdscr, cat, args.archivo)
+	# Subir los archivos SLD
+	stdscr.addstr("Subimos los siguientes archivos de estilo al servidor http://www-dev.geo.gob.bo/geoserver/\n\n")
+	for archivo in args.archivos:
+		# subimos el archivo SLD
+		subir_sld(stdscr, cat, archivo)
+		# cerrar el archivo (fue abierto al momento del parsing)
+		archivo.close()
 
 	# Todo salio bien - mensaje para terminar la funcion
 	return salir(stdscr)
@@ -160,7 +197,6 @@ def main(stdscr,args):
 curses.wrapper(main,args)
 
 # Fin
-# cerrar el archivo (argparser lo abre al momento del parsing)
-args.archivo.close()
+
 # salir
 quit()
