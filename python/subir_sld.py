@@ -83,26 +83,20 @@ def salir(stdscr,mensaje=""):
 
 	return None
 
-def main(stdscr,args):
+def subir_sld(stdscr, cat, archivo):
 	# Recuperar el nombre del archivo
-	nombreArchivo,nombreEstilo = recuperar_archivo(stdscr,args.archivo)
+	nombreArchivo,nombreEstilo = recuperar_archivo(stdscr,archivo)
 	if not nombreArchivo:
-		return salir(stdscr)
-
-	# Verificamos que funciono la conexion
-	try:
-		cat =  connectar_geoserver(stdscr)
-	except Exception as e:
-		return salir(stdscr,"La conexion con el GeoServer fallo\n")
+		return None
 
 	# Salida grafica
 	stdscr.addstr("Subimos el archivo %s de estilo en el servidor http://www-dev.geo.gob.bo/geoserver/\n" % nombreArchivo)
-
 	# Miramos si ya existe el estilo - preguntar que hacer
 	try:
 		estilo = cat.get_style(nombreEstilo)
 	except Exception as e:
-		return salir(stdscr,"No se pudo recuperar el estilo %s\n", nombreEstilo)
+		stdscr.addstr("No se pudo recuperar el estilo %s\n" % nombreEstilo)
+		return None
 		
 	if estilo:
 		i = 3
@@ -113,10 +107,11 @@ def main(stdscr,args):
 			if c == ord('R'):
 				# Existe el estilo, subimos una nueva version (remplazamos)
 				try:
-					cat.create_style(nombreEstilo, args.archivo.read(), overwrite=True)
+					cat.create_style(nombreEstilo, archivo.read(), overwrite=True)
 					stdscr.addstr("Estilo remplazado en el servidor\n")
 				except Exception as e:
-					return salir(stdscr,"Salio un error al remplazar el archivo:\n%s\n" % e)
+					stdscr.addstr("Salio un error al remplazar el archivo:\n%s\n" % e)
+					return None
 				break # Exit the while()
 			elif c == ord('B'):
 				# Existe el estilo, lo borramos
@@ -125,7 +120,8 @@ def main(stdscr,args):
 					cat.delete(estilo,purge=True)
 					stdscr.addstr("Estilo borrado en el servidor\n")
 				except Exception as e:
-					return salir(stdscr,"Salio un error al borrar el estilo en el servidor:\n%s\n" % e)
+					stdscr.addstr("Salio un error al borrar el estilo en el servidor:\n%s\n" % e)
+					return None
 				break # Exit the while()
 			elif c == ord('D'):
 				# No hacemos nada
@@ -138,10 +134,23 @@ def main(stdscr,args):
 		# para el uso de "with", ver http://effbot.org/zone/python-with-statement.htm
 		# -> el archivo se cerrara automaticamente
 		try:
-			cat.create_style(nombreEstilo, args.archivo.read())
+			cat.create_style(nombreEstilo, archivo.read())
 			stdscr.addstr("Estilo subido en el servidor\n")
 		except Exception as e:
-			return salir(stdscr,"Salio un error al subir el archivo:\n%s\n" % e)
+			stdscr.addstr("Salio un error al subir el archivo:\n%s\n" % e)
+			return None
+	return None
+
+
+def main(stdscr,args):
+	# Verificamos que funciono la conexion
+	try:
+		cat =  connectar_geoserver(stdscr)
+	except Exception as e:
+		return salir(stdscr,"La conexion con el GeoServer fallo\n")
+
+	# Subir el archivo SLD
+	subir_sld(stdscr, cat, args.archivo)
 
 	# Todo salio bien - mensaje para terminar la funcion
 	return salir(stdscr)
