@@ -8,12 +8,6 @@
 # Parametros: 
 # * archivo: el archivo sld a subir
 
-from geoserver.catalog import Catalog
-import sys
-import os
-import curses
-import time
-
 # Excepciones manejadas por gsconfig
 
 # UploadError
@@ -25,6 +19,25 @@ import time
 # Excepcion
 # ExpatError
 # SyntazError
+
+from geoserver.catalog import Catalog
+import sys
+import os
+import curses
+import time
+import argparse
+
+# Primero: los argumentos
+# utilizamos argparse (http://docs.python.org/howto/argparse.html)
+# * creacion del parser
+parser = argparse.ArgumentParser()
+# * especificacion del argumento archivo, de tipo "argparse.FileType('r')", es decir que es un archivo abierto.
+parser.add_argument("archivo", 
+	help="Archivo SLD a subir en el servidor GeoServer de dev de GeoBolivia",
+	type=argparse.FileType('r')
+	)
+# * hacemos un parsing, con verificacion, de los argumentos
+args = parser.parse_args()
 
 # Funcion de conexion a GeoServer
 def connectar_geoserver(stdscr):
@@ -47,31 +60,18 @@ def connectar_geoserver(stdscr):
 	return cat
 
 # Funcion de recuperacion de los argumentos
-def recuperar_archivo(stdscr):
-	# Verificamos que se dio un argumento en la linea de comando
-	if len(sys.argv) < 2:
-		stdscr.addstr("Dar el archivo SLD como argumento: %s /path/to/archivo.sld\n" % sys.argv[0])
-		return None,None
-
-	# Verificamos que el archivo dado en la linea de comando existe
-	# (sacamos los eventuales ", ', espacio)
-	#archivo = sys.argv[1].strip(' \"\'')
-	archivo = sys.argv[1]
-	if not os.path.isfile(archivo):
-		stdscr.addstr("El archivo %s no existe\n" % archivo)
-		return None,None
-	
+def recuperar_archivo(stdscr, archivo):
 	# Verificamos que la extension es SLD (.sld)
-	fileName, fileExtension = os.path.splitext(archivo)
+	fileName, fileExtension = os.path.splitext(archivo.name)
 	if fileExtension != ".sld":
-		stdscr.addstr("El archivo %s no tiene la extension SLD\n" % archivo)
+		stdscr.addstr("El archivo %s no tiene la extension SLD\n" % archivo.name)
 		return None,None
 
 	# Base del archivo (nombre del estilo)
 	nombreEstilo = os.path.basename(fileName)
 
 	# Todo esta OK - retornamos el archivo
-	return archivo,nombreEstilo
+	return archivo.name,nombreEstilo
 
 # Funcion llamada justo antes de salir
 def salir(stdscr,mensaje=""):
@@ -83,11 +83,11 @@ def salir(stdscr,mensaje=""):
 
 	return None
 
-def main(stdscr):
+def main(stdscr,args):
 	# Recuperar el nombre del archivo
-	archivo,nombreEstilo = recuperar_archivo(stdscr)
-	if not archivo:
-		return salir(stdscr,"La recuperacion del archivo SLD fallo\n")
+	nombreArchivo,nombreEstilo = recuperar_archivo(stdscr,args.archivo)
+	if not nombreArchivo:
+		return salir(stdscr)
 
 	# Verificamos que funciono la conexion
 	try:
@@ -96,7 +96,7 @@ def main(stdscr):
 		return salir(stdscr,"La conexion con el GeoServer fallo\n")
 
 	# Salida grafica
-	stdscr.addstr("Subimos el archivo %s de estilo en el servidor http://www-dev.geo.gob.bo/geoserver/\n" % archivo)
+	stdscr.addstr("Subimos el archivo %s de estilo en el servidor http://www-dev.geo.gob.bo/geoserver/\n" % nombreArchivo)
 
 	# Miramos si ya existe el estilo - preguntar que hacer
 	try:
@@ -112,15 +112,15 @@ def main(stdscr):
 			c = stdscr.getch()
 			if c == ord('R'):
 				# Existe el estilo, subimos una nueva version (remplazamos)
-				with open(archivo) as f:
-					try:
-						cat.create_style(nombreEstilo, f.read(), overwrite=True)
-						stdscr.addstr("Estilo remplazado en el servidor\n")
-					except Exception as e:
-						return salir(stdscr,"Salio un error al remplazar el archivo:\n%s\n" % e)
+				try:
+					cat.create_style(nombreEstilo, args.archivo.read(), overwrite=True)
+					stdscr.addstr("Estilo remplazado en el servidor\n")
+				except Exception as e:
+					return salir(stdscr,"Salio un error al remplazar el archivo:\n%s\n" % e)
 				break # Exit the while()
 			elif c == ord('B'):
 				# Existe el estilo, lo borramos
+				# http://jira.codehaus.org/browse/GEOS-3621
 				try:
 					cat.delete(estilo,purge=True)
 					stdscr.addstr("Estilo borrado en el servidor\n")
@@ -137,23 +137,21 @@ def main(stdscr):
 		# No existe el estilo, lo subimos
 		# para el uso de "with", ver http://effbot.org/zone/python-with-statement.htm
 		# -> el archivo se cerrara automaticamente
-		with open(archivo) as f:
-			try:
-				cat.create_style(nombreEstilo, f.read())
-				stdscr.addstr("Estilo subido en el servidor\n")
-			except Exception as e:
-				return salir(stdscr,"Salio un error al subir el archivo:\n%s\n" % e)
-# http://jira.codehaus.org/browse/GEOS-3621
+		try:
+			cat.create_style(nombreEstilo, args.archivo.read())
+			stdscr.addstr("Estilo subido en el servidor\n")
+		except Exception as e:
+			return salir(stdscr,"Salio un error al subir el archivo:\n%s\n" % e)
 
 	# Todo salio bien - mensaje para terminar la funcion
 	return salir(stdscr)
 
 # Creacion de la pantalla con curses
 # ver http://docs.python.org/howto/curses.html#curses-howto para un tutorial sobre curses
-curses.wrapper(main)
-
-# Esperamos un segundo antes de terminar
-time.sleep(0.2)
+curses.wrapper(main,args)
 
 # Fin
+# cerrar el archivo (argparser lo abre al momento del parsing)
+args.archivo.close()
+# salir
 quit()
