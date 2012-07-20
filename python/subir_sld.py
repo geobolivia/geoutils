@@ -128,11 +128,12 @@ def subir_sld(stdscr, cat, archivo):
 		
 	if estilo:
 		i = 3
+		stdscr.addstr("\nEl estilo '%s' ya existe en el servidor.\n" % estilo.name)
 		while i > 0:
 			i -=1
-			stdscr.addstr("\nEl estilo '%s' ya existe en el servidor.\n[R]emplazar, [D]ejar la version anterior o [B]orrarla sin subir la nueva ?\n" % estilo.name)
+			stdscr.addstr("[r]emplazar, [d]ejar sin cambio, solo [b]orrar el estilo del servidor, o [q]uit ?\n")
 			c = stdscr.getch()
-			if c == ord('R'):
+			if c == ord('r'):
 				# Existe el estilo, subimos una nueva version (remplazamos)
 				try:
 					cat.create_style(nombreEstilo, archivo.read(), overwrite=True)
@@ -141,7 +142,7 @@ def subir_sld(stdscr, cat, archivo):
 					stdscr.addstr("Salio un error al remplazar el archivo:\n%s\n" % e)
 					return None
 				break # Exit the while()
-			elif c == ord('B'):
+			elif c == ord('b'):
 				# Existe el estilo, lo borramos
 				# http://jira.codehaus.org/browse/GEOS-3621
 				try:
@@ -151,10 +152,14 @@ def subir_sld(stdscr, cat, archivo):
 					stdscr.addstr("Salio un error al borrar el estilo en el servidor:\n%s\n" % e)
 					return None
 				break # Exit the while()
-			elif c == ord('D'):
+			elif c == ord('d'):
 				# No hacemos nada
 				stdscr.addstr("Dejamos la version anterior del estilo en el servidor\n")
 				break # Exit the while()
+			elif c == ord('q'):
+				# Salimos de la funcion, indicando que queremos parar (stop = True)
+				stdscr.addstr("Salimos del programa\n")
+				return True # Exit the while()
 		if i == 0:
 			stdscr.addstr("No se entiende - dejamos la version anterior del estilo en el servidor\n")
 	else:
@@ -183,9 +188,10 @@ def main(stdscr,args):
 
 	# Subir los archivos SLD
 	stdscr.addstr("Subimos los siguientes archivos de estilo al servidor http://www-dev.geo.gob.bo/geoserver/\n\n")
+	stop = False
 	for archivo in args.archivos:
 		# subimos el archivo SLD
-		subir_sld(stdscr, cat, archivo)
+		if not stop: stop = subir_sld(stdscr, cat, archivo)
 		# cerrar el archivo (fue abierto al momento del parsing)
 		archivo.close()
 
@@ -197,6 +203,4 @@ def main(stdscr,args):
 curses.wrapper(main,args)
 
 # Fin
-
-# salir
 quit()
