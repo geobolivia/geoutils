@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Objeto: utilizando la libreria gsconfig, publicar un SLD en el GeoServer
 #
@@ -26,6 +27,7 @@ import os
 import curses
 import time
 import argparse
+import getpass
 
 # Primero: los argumentos
 # utilizamos argparse (http://docs.python.org/howto/argparse.html)
@@ -72,14 +74,12 @@ parser.add_argument("archivos",
 args = parser.parse_args()
 
 # Funcion de conexion a GeoServer
-def connectar_geoserver(stdscr):
+def connectar_geoserver(stdscr,user,pw):
 	# Datos para la conexion a GeoServer
-	user = 'admin_geobolivia'
-	password = 'YGoL3lSJYCwjCLDC'
 	url_geoserver = "http://www-dev.geo.gob.bo/geoserver/rest"
 
 	# Conexion a GeoServer
-	cat = Catalog(url_geoserver, user, password)
+	cat = Catalog(url_geoserver, user, pw)
 
 	# Probar la conexion con una consulta simple
 	try:
@@ -175,14 +175,14 @@ def subir_sld(stdscr, cat, archivo):
 	return None
 
 
-def main(stdscr,args):
+def main(stdscr,args,user,pw):
 	# Avisamos si no hay archivos
 	if not len(args.archivos):
 		return salir(stdscr, "Ningun archivo SLD para procesar\n")
 
 	# Probamos la conexion a GeoServer
 	try:
-		cat =  connectar_geoserver(stdscr)
+		cat =  connectar_geoserver(stdscr,user,pw)
 	except Exception as e:
 		return salir(stdscr,"La conexion con el GeoServer fallo\n")
 
@@ -198,9 +198,14 @@ def main(stdscr,args):
 	# Todo salio bien - mensaje para terminar la funcion
 	return salir(stdscr)
 
+
+# preguntamos el usuario / password - son las credenciales LDAP
+user = raw_input("Usuario: ")
+pw = getpass.getpass('Contraseña: ')
+
 # Creacion de la pantalla con curses
 # ver http://docs.python.org/howto/curses.html#curses-howto para un tutorial sobre curses
-curses.wrapper(main,args)
+curses.wrapper(main,args,user,pw)
 
 # Fin
 quit()
