@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # para el encoding, ver: http://www.python.org/dev/peps/pep-0263/
-# sin utf-8, no se pueden utilizar caracteres con tildes, etc (ni el código, ni en los comentarios)
+# sin utf-8, no se pueden utilizar caracteres con tildes, etc (ni el código, ni 
+# en los comentarios)
 
-# Objeto: utilizando la libreria gsconfig, publicar un SLD / uan carpeta de SLD en el GeoServer
+# Objeto: utilizando la libreria gsconfig, publicar un SLD / uan carpeta de SLD 
+# en el GeoServer
 #
 # Uso:
 #   subir_sld /path/to/archivo.sld
@@ -14,7 +16,8 @@
 # * carpeta/: la carpeta que contiene los archivos sld
 
 # Importación de los siguientes modulos
-from geoserver.catalog import Catalog # para conectarse a GeoServer via la API REST (gsconfig)
+from geoserver.catalog import Catalog # para conectarse a GeoServer via la API 
+# REST (gsconfig)
 import os # para manejar los archivos del sistema operativo
 import curses # para elaborar una pantalla interactiva con el usuario
 import argparse # para hacer un parsing de los argumentos en linea de comando
@@ -26,9 +29,11 @@ def crear_parser():
     # Creacion del parser
     parser = argparse.ArgumentParser()
 
-    # Especificacion del argumento archivos - se llamara la funcion parse_archivos para crear la lista de archivos a procesar
+    # Especificacion del argumento archivos - se llamara la funcion 
+    # parse_archivos para crear la lista de archivos a procesar
     parser.add_argument("archivos", 
-        help="archivo SLD / carpeta de archivos SLD - para subir en el servidor GeoServer de dev de GeoBolivia",
+        help="archivo SLD / carpeta de archivos SLD - para subir en el " + 
+            "servidor GeoServer de dev de GeoBolivia",
         type=parse_archivos,
         )
 
@@ -130,41 +135,52 @@ def subir_sld(stdscr, cat, archivo):
         # Preguntaremos hasta tres veces al usuario
         i = 3
         # Indicamos que el estilo ya existe en el servidor
-        stdscr.addstr("\nEl estilo '%s' ya existe en el servidor.\n" % estilo.name)
+        stdscr.addstr("\nEl estilo '%s' ya existe en el servidor.\n" % 
+           estilo.name)
         # Empezamos a pedir una respuesta al usuario
         while i > 0:
             # Bajamos el numero de preguntas restantes
             i -=1
             # Preguntamos al usuario que hacer
-            stdscr.addstr("[r]emplazar, [d]ejar sin cambio, solo [b]orrar el estilo del servidor, o [q]uit ?\n")
+            stdscr.addstr("[r]emplazar, [d]ejar sin cambio, solo [b]orrar el " +
+                "estilo del servidor, o [q]uit ?\n")
             # Esperamos su respuesta (un caracter)
             c = stdscr.getch()
             # Miramos que caracter tecló
             if c == ord('r'):
-                # El usuario quiere subir el archivo y remplazar el estilo existante
+                # El usuario quiere subir el archivo y remplazar el estilo
+                # existante
                 try:
                     # Probamos de remplazar el estilo por el archivo
-                    cat.create_style(nombreEstilo, archivo.read(), overwrite=True)
+                    cat.create_style(nombreEstilo, archivo.read(), 
+                        overwrite=True)
                     # Funcionó: indicamos que el estilo fue remplazado
                     stdscr.addstr("Estilo remplazado en el servidor\n")
                 except Exception as e:
-                    # Salió una excepción: indicamos que no se pudó remplazar el estilo
-                    stdscr.addstr("Salio un error al remplazar el archivo:\n%s\n" % e)
+                    # Salió una excepción: indicamos que no se pudó remplazar el
+                    # estilo
+                    stdscr.addstr("Salio un error al remplazar el " +
+                        "archivo:\n%s\n" % e)
                     # Salimos
                     return None
                 # Salimos del bucle de preguntas
                 break
             elif c == ord('b'):
-                # El usuario quiere borrar el estilo existante, sin subir el archivo
+                # El usuario quiere borrar el estilo existante, sin subir el 
+                # archivo
                 try:
-                    # Probamos de borrar el estilo (archivos .sld y .xml en el servidor)
-                    # * para el parametro purge, ver http://jira.codehaus.org/browse/GEOS-3621
+                    # Probamos de borrar el estilo (archivos .sld y .xml en el 
+                    # servidor)
+                    # * para el parametro purge, ver 
+                    #   http://jira.codehaus.org/browse/GEOS-3621
                     cat.delete(estilo,purge=True)
                     # Funcionó: indicamos que el estilo fue borrado
                     stdscr.addstr("Estilo borrado en el servidor\n")
                 except Exception as e:
-                    # Salió una excepción: indicamos que no se pudó borrar estilo
-                    stdscr.addstr("Salio un error al borrar el estilo en el servidor:\n%s\n" % e)
+                    # Salió una excepción: indicamos que no se pudó borrar
+                    # estilo
+                    stdscr.addstr("Salio un error al borrar el estilo en el " +
+                        "servidor:\n%s\n" % e)
                     # Salimos
                     return None
                 # Salimos del bucle de preguntas
@@ -172,22 +188,27 @@ def subir_sld(stdscr, cat, archivo):
             elif c == ord('d'):
                 # El usuario quiere dejar el estilo actual en el servidor
                 # Indicamos que entendimos la decision y que no se hizó nada
-                stdscr.addstr("Dejamos la version anterior del estilo en el servidor\n")
+                stdscr.addstr("Dejamos la version anterior del estilo en el " +
+                    "servidor\n")
                 # Salimos del bucle de preguntas
                 break
             elif c == ord('q'):
                 # El usuario quiere para el programa
                 # Indicamos que salimos del programa
                 stdscr.addstr("Salimos del programa\n")
-                # Salimos de la funcion, indicando que queremos parar el programa (stop = True)
+                # Salimos de la funcion, indicando que queremos parar el
+                # programa (stop = True)
                 return True
         # Test sobre el numero de preguntas restantes
         if i == 0:
-            # Ya no hay preguntas restantes - no entendimos las respuestas del usuario
+            # Ya no hay preguntas restantes - no entendimos las respuestas del 
+            # usuario
             # Indicamos que no se hizó nada (equivalente a la opción "[d]ejar")
-            stdscr.addstr("No se entiende - dejamos la version anterior del estilo en el servidor\n")
+            stdscr.addstr("No se entiende - dejamos la version anterior del " +
+                "estilo en el servidor\n")
     else:
-        # El estilo no existe en el servidor - subimos el archivo sin preguntar nada al usuario
+        # El estilo no existe en el servidor - subimos el archivo sin preguntar
+        # nada al usuario
         try:
             # Probamos de subir el archivo
             cat.create_style(nombreEstilo, archivo.read())
@@ -230,11 +251,13 @@ def main(stdscr,archivos,user,pw):
         # Probamos la conexion a GeoServer
         cat =  connectar_geoserver(stdscr,user,pw)
     except Exception as e:
-        # Salió una excepción, salimos del función indicando que no se pudó conectar
+        # Salió una excepción, salimos del función indicando que no se pudó
+        # conectar
         return salir(stdscr, archivos, "La conexion con el GeoServer fallo\n")
 
     # Indicamos que se van a subir los archivos SLD
-    stdscr.addstr("Subimos los siguientes archivos de estilo al servidor http://www-dev.geo.gob.bo/geoserver/\n\n")
+    stdscr.addstr("Subimos los siguientes archivos de estilo al servidor " + 
+        "http://www-dev.geo.gob.bo/geoserver/\n\n")
     # El parametro para parar el bucle esta desactivado
     stop = False
     # Procesamos cada archivo
@@ -262,7 +285,8 @@ if __name__ == "__main__":
     pw = getpass.getpass('Contraseña: ')
 
     # Creacion de la pantalla interactiva con curses, llamando la función "main"
-    # * ver http://docs.python.org/howto/curses.html#curses-howto para un tutorial sobre curses
+    # * ver http://docs.python.org/howto/curses.html#curses-howto para un 
+    # tutorial sobre curses
     curses.wrapper(main,args.archivos,user,pw)
 
     # Salimos del programa
