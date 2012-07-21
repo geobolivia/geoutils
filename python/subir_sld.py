@@ -219,17 +219,11 @@ def salir(stdscr,archivos=[],mensaje=""):
 	return None
 
 # Funcion principal
-def main(stdscr,user,pw):
-	# Parsing de los argumentos de la linea de comando
-	# creación del objeto parser
-	parser = crear_parser()
-	# parsing de los argumentos
-	args = parser.parse_args()
-
+def main(stdscr,archivos,user,pw):
 	# Probar si se encontraron archivos SLD validos
-	if not len(args.archivos):
+	if not len(archivos):
 		# No se encontró archivos validos - salimos de la función
-		return salir(stdscr, args.archivos, "Ningún archivo SLD para procesar\n")
+		return salir(stdscr, archivos, "Ningún archivo SLD para procesar\n")
 
 	# Configurar la conexión a GeoServer
 	try:
@@ -237,34 +231,42 @@ def main(stdscr,user,pw):
 		cat =  connectar_geoserver(stdscr,user,pw)
 	except Exception as e:
 		# Salió una excepción, salimos del función indicando que no se pudó conectar
-		return salir(stdscr, args.archivos, "La conexion con el GeoServer fallo\n")
+		return salir(stdscr, archivos, "La conexion con el GeoServer fallo\n")
 
 	# Indicamos que se van a subir los archivos SLD
 	stdscr.addstr("Subimos los siguientes archivos de estilo al servidor http://www-dev.geo.gob.bo/geoserver/\n\n")
 	# El parametro para parar el bucle esta desactivado
 	stop = False
 	# Procesamos cada archivo
-	for archivo in args.archivos:
+	for archivo in archivos:
 		# Si el parametro "stop" sigue falso
 		if not stop:
 			# probamos de subir el archivo SLD al servidor
 			stop = subir_sld(stdscr, cat, archivo)
 
 	# Salimos de la función, esperando que el usuario tecle algo
-	return salir(stdscr, args.archivos)
+	return salir(stdscr, archivos)
 
-# Preguntamos el usuario / password - son las credenciales LDAP
-# * usuario
-user = raw_input("Usuario: ")
-# * password (funcion getpass para no mostrar el password en la terminal)
-pw = getpass.getpass('Contraseña: ')
 
-# Creacion de la pantalla interactiva con curses, llamando la función "main"
-# * ver http://docs.python.org/howto/curses.html#curses-howto para un tutorial sobre curses
-curses.wrapper(main,user,pw)
+if __name__ == "__main__":
+	# Parsing de los argumentos de la linea de comando
+	# creación del objeto parser
+	parser = crear_parser()
+	# parsing de los argumentos
+	args = parser.parse_args()
 
-# Salimos del programa
-quit()
+	# Preguntamos el usuario / password - son las credenciales LDAP
+	# * usuario
+	user = raw_input("Usuario: ")
+	# * password (funcion getpass para no mostrar el password en la terminal)
+	pw = getpass.getpass('Contraseña: ')
+
+	# Creacion de la pantalla interactiva con curses, llamando la función "main"
+	# * ver http://docs.python.org/howto/curses.html#curses-howto para un tutorial sobre curses
+	curses.wrapper(main,args.archivos,user,pw)
+
+	# Salimos del programa
+	quit()
 
 
 
