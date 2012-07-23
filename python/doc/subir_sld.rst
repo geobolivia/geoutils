@@ -6,10 +6,9 @@ Para la documentación dentro del código, seguimos la `convención de Google
 
 Ver también la `documentación en el sitio de Python <http://packages.python.org/an_example_pypi_project/sphinx.html>`_
 
-Auto-documentación
-------------------
+Módulo subir_sld
+----------------
 
 .. automodule:: subir_sld
    :members:
-   :undoc-members:
 
