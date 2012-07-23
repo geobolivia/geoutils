@@ -1,19 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # para el encoding, ver: http://www.python.org/dev/peps/pep-0263/
+# para el encoding, ver: http://www.python.org/dev/peps/pep-0263/
 # sin utf-8, no se pueden utilizar caracteres con tildes, etc (ni el código, ni 
 # en los comentarios)
 
-# Objeto: utilizando la libreria gsconfig, publicar un SLD / uan carpeta de SLD 
-# en el GeoServer
-#
-# Uso:
-#   subir_sld /path/to/archivo.sld
-#   subir_sld /path/to/carpeta/
-#
-# Parametros:
-# * archivo.sld: el archivo sld a subir
-# * carpeta/: la carpeta que contiene los archivos sld
+"""Objeto: Utilizando el módulo gsconfig, publicar un SLD / una carpeta de SLD
+    en el GeoServer de dev.
+    
+    Usos:
+        * subir un archivo SLD::
+    
+            subir_sld /path/to/archivo.sld
+        
+        * subir una carpeta de archivos SLD::
+    
+            subir_sld /path/to/carpeta/
+        
+"""
+
 
 # Importación de los siguientes modulos
 from geoserver.catalog import Catalog # para conectarse a GeoServer via la API 
@@ -23,9 +28,15 @@ import curses # para elaborar una pantalla interactiva con el usuario
 import argparse # para hacer un parsing de los argumentos en linea de comando
 import getpass # para pedir y recuperar la contraseña de manera segura
 
-# Creacion del parser para los argumentos de la linea de comando
-# utilizamos argparse (http://docs.python.org/howto/argparse.html)
 def crear_parser():
+    """Creación del parser para los argumentos de la linea de comando.
+    
+    Utilizamos el módulo argparse (http://docs.python.org/howto/argparse.html).
+    
+    Returns:
+        Un parser (objeto argparse.ArgumentParser).
+
+    """
     # Creacion del parser
     parser = argparse.ArgumentParser()
 
@@ -39,8 +50,22 @@ def crear_parser():
 
     return parser
 
-# Abrir un archivo, verificando que es de tipo SLD
 def test_and_open_sld_file(files,fileName):
+    """Verificar y abrir un archivo SLD.
+    
+    Se verifica que el archivo fileName es de tipo estilo SLD (.sld) y que se 
+    puede abrir.
+    
+    Args:
+        * files: Lista de otros archivos SLD ya abiertos.
+        * fileName: Nombre del archivo SLD a añadir.
+    
+    Returns:
+        La lista de archivos "files", con un nuevo elemento si el archivo SLD
+        fue validado: el archivo abierto en modo lectura texto.
+    
+    """
+
     # Recuperar la extension
     fileBase, fileExtension = os.path.splitext(fileName)
     # Parece un archivo SLD (extension .sld) ?
@@ -56,9 +81,19 @@ def test_and_open_sld_file(files,fileName):
             pass
     return files
 
-# Abrir el archivo SLD, o los archivos SLD si el argumento es una carpeta
-# * devuelve una lista de los archivos SLD abiertos para lectura en modo texto
 def parse_archivos(path):
+    """Verificar y abrir los archivos SLD a procesar.
+    
+    Si path es un archivo, probar de abrirlo. Si es una carpeta, buscar todos
+    los archivos SLD que contiene (sin recursividad) y probar de abrirlos.
+    
+    Args:
+        * path: Carpeta o archivo a procesar.
+        
+    Returns:
+        Una lista de archivos SLD abiertos en modo lectura texto.
+        
+    """
     # Creamos la lista de archivos SLD abiertos
     files = []
 
@@ -78,8 +113,24 @@ def parse_archivos(path):
     # Devolvemos la lista de archivos SLD encontrados
     return files
 
-# Conectarse a GeoServer
-def connectar_geoserver(stdscr,user,pw):
+def conectar_geoserver(stdscr,user,pw):
+    """Probar la conexión a GeoServer (de dev) y crear el objeto Catalogo.
+    
+    Args:
+        * stdscr: Objeto ventana del módulo curses.
+        * user: Nombre de usuario para la conexión a GeoServer.
+        * pw: Password para la conexión a GeoServer.
+        
+    Returns:
+        Un objeto Catalogo del módulo gsconfig para manejar la conexión al
+        GeoServer de dev de GeoBolivia.
+        
+    Raises:
+        Cualquier excepción mandada por la función gsconfig.get_workspaces()
+        esta transmitida.
+    
+    """
+    
     # Datos para la conexion a GeoServer
     url_geoserver = "http://www-dev.geo.gob.bo/geoserver/rest"
 
@@ -100,8 +151,19 @@ def connectar_geoserver(stdscr,user,pw):
     # Devolvemos el objeto catalogo
     return cat
 
-# Crear el nombre del estilo correspondiendo al archivo abierto
 def crear_nombre_estilo(archivo):
+    """Crear el nombre del estilo a partir del archivo abierto en lectura.
+    
+    Recuperar el nombre del archivo abierto y sacar la extensión .sld.
+    
+    Args:
+        * archivo: Archivo SLD abierto en modo lectura texto.
+        
+    Returns:
+        El nombre del estilo correspondiente (destinado a ser el nombre del 
+        estilo en GeoServer).
+        
+    """
     # Recuperamos el nombre de archivo sin la extension
     fileName, fileExtension = os.path.splitext(archivo.name)
 
@@ -111,8 +173,32 @@ def crear_nombre_estilo(archivo):
     # Retornamos el nombre del estilo
     return nombreEstilo
 
-# Probar de subir un archivo SLD al servidor GeoServer
 def subir_sld(stdscr, cat, archivo):
+    """Probar de subir el archivo SLD al servidor GeoServer.
+    
+    A partir del archivo, recuperar el nombre de estilo correspondiente, y 
+    probar de subirlo a GeoServer. Si ya existe un estilo con el mismo nombre
+    en el GeoServer, preguntar al usuario lo que quiere hacer.
+    
+    Hay varias posibilidades de respuesta para el usuario:
+        * 'r': remplazar el estilo de GeoServer con el archivo SLD,
+        * 'd': dejar el estilo existente en GeoServer,
+        * 'b': borrar el estilo existente, sin tampoco subir el archivo SLD,
+        * 'q': salir de la función, pidiendo que se pare el programa (mismo
+            efecto que 'd', pidiendo la misma respuesta para todos los otros
+            archivos SLD eventuales).
+    
+    Args:
+        * stdscr: Objeto ventana del módulo curses.
+        * cat: Objeto Catalogo del módulo gsconfig (para manejar el acceso a
+            GeoServer).
+        * archivo: Archivo SLD abierto en modo lectura texto.
+    
+    Returns:
+        True para indicar que el usuario quiere parar el programa (corresponde a
+        la respuesta "q" del usuario). En cualquier otro caso, None.
+        
+    """
     # Recuperar el nombre del archivo
     nombreEstilo = crear_nombre_estilo(archivo)
 
@@ -222,8 +308,19 @@ def subir_sld(stdscr, cat, archivo):
     # Salimos del programa, sin indicar que queremos parar (sería "return True")
     return None
 
-# Mostrar un mensaje, cerrar los archivos y esperar que el usuario tecle algo
 def salir(stdscr,archivos=[],mensaje=""):
+    """Limpiar el entorno antes de salir.
+
+    Mostrar un eventual mensaje de salida, cerrar los archivos SLD abiertos
+    en modo lectura texto, y esperar que el usuario tecle algo para salir
+
+    Args:
+        * stdscr: Objeto ventana del módulo curses.
+        * archivos: Lista de archivos SLD abiertos en modo lectura texto.
+        * mensaje: Eventual mensaje de salida.
+
+    """
+
     # Si existe, mostramos el mensaje
     if mensaje: stdscr.addstr(mensaje)
 
@@ -239,8 +336,20 @@ def salir(stdscr,archivos=[],mensaje=""):
     # Salimos de la funcion
     return None
 
-# Funcion principal
 def main(stdscr,archivos,user,pw):
+    """Subir una lista de archivos SLD a GeoServer.
+    
+    Se usan las credenciales user/pw para conectarse al servidor GeoServer de
+    dev y subir los archivos SLD de la lista.
+    
+    Args:
+        * stdscr: Objeto ventana del módulo curses.
+        * archivos: Lista de archivos SLD abiertos en modo lectura texto.
+        * user: Nombre de usuario para la conexión a GeoServer.
+        * pw: Password para la conexión a GeoServer.
+        
+    """
+    
     # Probar si se encontraron archivos SLD validos
     if not len(archivos):
         # No se encontró archivos validos - salimos de la función
@@ -249,7 +358,7 @@ def main(stdscr,archivos,user,pw):
     # Configurar la conexión a GeoServer
     try:
         # Probamos la conexion a GeoServer
-        cat =  connectar_geoserver(stdscr,user,pw)
+        cat =  conectar_geoserver(stdscr,user,pw)
     except Exception as e:
         # Salió una excepción, salimos del función indicando que no se pudó
         # conectar
@@ -268,7 +377,9 @@ def main(stdscr,archivos,user,pw):
             stop = subir_sld(stdscr, cat, archivo)
 
     # Salimos de la función, esperando que el usuario tecle algo
-    return salir(stdscr, archivos)
+    salir(stdscr, archivos)
+    
+    return None
 
 
 if __name__ == "__main__":
@@ -292,8 +403,6 @@ if __name__ == "__main__":
     # Salimos del programa
     quit()
 
-
-
 # Algunos datos de desarrollo - a poner en otro lugar
 
 # para el uso de "with", ver http://effbot.org/zone/python-with-statement.htm
@@ -310,4 +419,3 @@ if __name__ == "__main__":
 # Excepcion
 # ExpatError
 # SyntaxError
-
