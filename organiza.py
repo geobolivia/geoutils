@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 """ organiza los datos del geoserver 
 args: las carpetas de shp, stylos y un archivo csv de los datos del geoserver
@@ -11,17 +10,16 @@ import csv
 import fnmatch
 import shutil
 
-# leee un archivo csv
+# read file csv
 os.chdir('/home/diana/geoutils/python/DATA')
 arch = 'TLayers.csv'
-#sin archivo csv
 for i,layer in enumerate(all_layers):
 	b = layer.name
 	a = layer.resource.metadata_links
 	that_layer = cat.get_layer(b)
 	that_style = that_layer.default_style
 	print that_style.name
-# descarga el metadato
+# download metadata and pdf
 for row in datos:
     layername = row [5]
     title = row [6]
@@ -30,8 +28,6 @@ for row in datos:
     temp = tupla [2]
     temp2 = temp.partition("'")
     find = temp2 [0]
-   
-    #para la direccion del metadato
     metalink = row [8]
     styles = row [9]
     styles = styles + '.sld'
@@ -44,7 +40,7 @@ for row in datos:
     if num == '':
 		print 'no tiene metadato' 
     else: 
-        #descarga el metadato
+        
         a=title.find ('Error' or "")
         if a == -1:
            
@@ -53,13 +49,11 @@ for row in datos:
        
            pdf = dire + '/' + layername + '.pdf'
            urllib.urlretrieve(urlpdf, filename=pdf)
-           #print dire
            metadata = dire + '/' + layername + '.xml'
            url= 'http://www.geo.gob.bo/geonetwork/srv/es/iso19139.xml?id='    
            url = url + num
            urllib.urlretrieve(url, filename=metadata)
-    #copia el SLD asociado
- 
+    #copy the associated SLD
     matches = []
     for root, dirnames, filenames in os.walk('/home/diana/geoutils/python/DATA/styles'):
         for filename in fnmatch.filter(filenames, styles):  
@@ -72,4 +66,24 @@ for row in datos:
             else:
 				final = dire + '/' + layername + '.sld'   
 				shutil.copy2(actual, final)
-            
+
+# check if you have the extension prj and if it creates
+    shapefile = dire + '/' + layername + '.shp'
+    # creates an object (ESRI Shapefile)
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    inDS = driver.Open(shapefile, 0)
+    if inDS is None:
+        print 'Could not open file'
+    referencia = dire + '/' + layername + '.prj'
+    inLayer = inDS.GetLayer()
+    spatialRef = inLayer.GetSpatialRef()
+    if spatialRef == None:
+		geod= 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",'
+		sphe='SPHEROID/["WGS_1984",6378137.0,298.257223563]],'
+		primen = 'PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]'
+		ref = geod + sphe + primen
+		file = open(referencia, 'w')
+		file.write(ref)
+		file.close()
+	   	  
+	   
