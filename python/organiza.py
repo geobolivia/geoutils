@@ -29,7 +29,8 @@ for row in datos:
     find = temp2 [0]
     metalink = linea [8]
     styles = linea [9]
-    styles = styles + '.sld'
+    style_xml = styles + '.xml'
+    style_sld = styles + '.sld'
     tupla = metalink.partition('id=')
     cad = tupla [2]
     num = cad.replace ("'","")
@@ -54,18 +55,19 @@ for row in datos:
            url = url + num
            urllib.urlretrieve(url, filename=metadata)
     #copy the associated SLD
-    matches = []
     for root, dirnames, filenames in os.walk('/home/wilson/pythonDiana/DATA/styles'):
-        for filename in fnmatch.filter(filenames, styles):  
-            matches.append(os.path.join(root, filename))
-           
-            actual = root + '/'+ filename
-            print actual 
+        for filename in fnmatch.filter(filenames, style_xml):
+            # actual_xml is the xml file asociated to the style
+            actual_xml = os.path.join(root, filename)
+            print actual_xml
             if find == '':
 				print 'no hay directorio'
             else:
+				# Find the SLD file, from the XML content
+				actual_sld = os.path.join(root, style_sld)
+				# Copy the SLD file into the output directory
 				final = dire + '/' + layername + '.sld'   
-				shutil.copy2(actual, final)
+				shutil.copy2(actual_sld, final)
 
 # check if you have the extension prj and if it creates
 #    shapefile = dire + '/' + layername + '.shp'
