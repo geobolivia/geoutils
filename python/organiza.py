@@ -9,6 +9,7 @@ import os
 import csv
 import fnmatch
 import shutil
+import xml.etree.ElementTree as ET
 
 # read file csv
 os.chdir('/home/wilson/pythonDiana/DATA')
@@ -64,7 +65,9 @@ for row in datos:
 				print 'no hay directorio'
             else:
 				# Find the SLD file, from the XML content
-				actual_sld = os.path.join(root, style_sld)
+				xml_tree = ET.parse(actual_xml)
+				xml_root = xml_tree.getroot()
+				actual_sld = os.path.join(root, xml_root.find('filename').text)
 				# Copy the SLD file into the output directory
 				final = dire + '/' + layername + '.sld'   
 				shutil.copy2(actual_sld, final)
