@@ -5,8 +5,6 @@
 args:
 """
 
-import sys
-#sys.path.append("lib/OWSLib")
 from owslib.csw import CatalogueServiceWeb
 import dateutil.parser
 
@@ -48,32 +46,34 @@ csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 # Get all metadata
 data=[['id','Titulo','Fecha',u'A\u00F1o','Contacto (nombre)', 'Contacto (organizacion)', 'Contacto (email)', 'Contacto (telefono)']]
 
-csw.getrecords(maxrecords=10,outputschema='http://www.isotc211.org/2005/gmd',esn='full',sortby='gco:CharacterString')
+def getrecords(csw, startposition=0, maxrecords=10):
+    try:
+        csw.getrecords(outputschema='http://www.isotc211.org/2005/gmd',esn='full', startposition=startposition, maxrecords=maxrecords)
+
+        # Format data
+        for rec in csw.records:
+            r=csw.records[rec]
+            # Prepare each field
+            id=r.identifier
+            title=r.identification.title
+            contactorg=r.identification.contact[0].organization
+            date=r.identification.date[0].date
+            year=str(dateutil.parser.parse(date).year) if date else ''
+            # Put in output array
+            data.append([
+                    id,
+                    title,
+                    year,
+                    contactorg
+                    ])
+    except:
+        return []
+
+    return data
+
+getrecords(csw=csw)
 print str(len(csw.records)) + ' fichas de metadatos'
 
-# Format data
-for rec in csw.records:
-    r=csw.records[rec]
-    # Prepare each field
-    id=r.identifier
-    title=r.identification.title
-    contactname=r.identification.contact[0].name
-    contactorg=r.identification.contact[0].organization
-    contactemail=r.identification.contact[0].email
-    contacttel=r.identification.contact[0].phone
-    date=r.identification.date[0].date
-    year=str(dateutil.parser.parse(date).year) if date else ''
-    # Put in output array
-    data.append([
-            id,
-            title,
-            date,
-            year,
-            contactname,
-            contactorg,
-            contactemail,
-            contacttel
-            ])
 
 # Transpose the matrix
 data=zip(*data)
