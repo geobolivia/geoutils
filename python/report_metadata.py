@@ -7,6 +7,7 @@ args:
 
 from owslib.csw import CatalogueServiceWeb
 import dateutil.parser
+import math
 
 # Class for writing in CSV without encoding problems
 # See: http://docs.python.org/2/library/csv.html#csv-examples
@@ -44,9 +45,9 @@ class UnicodeWriter:
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
 # Get all metadata
-data=[['id','Titulo','Fecha',u'A\u00F1o','Contacto (nombre)', 'Contacto (organizacion)', 'Contacto (email)', 'Contacto (telefono)']]
 
 def getrecords(csw, startposition=0, maxrecords=10):
+    datapart=[]
     try:
         csw.getrecords(outputschema='http://www.isotc211.org/2005/gmd',esn='full', startposition=startposition, maxrecords=maxrecords)
 
@@ -60,7 +61,7 @@ def getrecords(csw, startposition=0, maxrecords=10):
             date=r.identification.date[0].date
             year=str(dateutil.parser.parse(date).year) if date else ''
             # Put in output array
-            data.append([
+            datapart.append([
                     id,
                     title,
                     year,
@@ -69,11 +70,47 @@ def getrecords(csw, startposition=0, maxrecords=10):
     except:
         return []
 
-    return data
+    return datapart
 
-getrecords(csw=csw)
-print str(len(csw.records)) + ' fichas de metadatos'
+# Logica para recuperar todos los metadatos
+data=[['id','Titulo','Fecha',u'A\u00F1o','Contacto (nombre)', 'Contacto (organizacion)', 'Contacto (email)', 'Contacto (telefono)']]
 
+startposition=0
+maxrecordsinit=50
+maxrecords=maxrecordsinit
+more=True
+iter=0
+matches = None
+factormult = 2
+while iter < 500 and more:
+    iter = iter+1
+    if matches and startposition + maxrecords > matches:
+        maxrecords = matches - startposition
+
+    #print str(iter) + " - startposition: " + str(startposition) + " - maxrecords: " + str(maxrecords)
+    datapart=getrecords(csw=csw, startposition=startposition, maxrecords=maxrecords)
+    matches=csw.results['matches']
+    returned=len(datapart)
+    #print returned
+
+    if returned==maxrecords:
+        data.extend(datapart)
+        startposition+=returned
+        maxrecords=maxrecords*factormult
+        if startposition >= matches:
+            more=False
+    else:
+        # There is an error in the list of records
+        if maxrecords > 1:
+            # We divide the list of records
+            maxrecords=1
+        else:
+            # We only asked for one record and it failed -> we bypass it
+            startposition=startposition+1
+            maxrecords=maxrecords*factormult
+
+print str(len(data)) + ' metadata correctly fetched'
+print str(matches - len(data)) + ' metadata with error'
 
 # Transpose the matrix
 data=zip(*data)
