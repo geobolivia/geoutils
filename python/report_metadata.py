@@ -92,7 +92,7 @@ def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
     print str(matches - len(cswrecords)) + ' metadata with error'
     return cswrecords
 
-def getrecordfields(r, fieldskeys):
+def getrecordfields(r):
     date=r.identification.date[0].date
     fields = {
         'id': r.identifier,
@@ -101,16 +101,18 @@ def getrecordfields(r, fieldskeys):
         'year': str(dateutil.parser.parse(date).year) if date else '',
         'bb': r.identification.extent.boundingBox
         }
+    return fields
+
+def getrecordfieldsintable(r, fieldskeys):
+    fields = getrecordfields(r)
     return [fields[k] for k in fieldskeys]
-
-
 
 def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
     matrix=[fieldsnames.values()]
     for rec in cswrecords:
         r=cswrecords[rec]
         if r:
-            matrix.append(getrecordfields(r, fieldskeys))
+            matrix.append(getrecordfieldsintable(r, fieldskeys))
 
     # Transpose the matrix
     matrix=zip(*matrix)
