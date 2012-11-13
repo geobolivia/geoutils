@@ -92,14 +92,25 @@ def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
     print str(matches - len(cswrecords)) + ' metadata with error'
     return cswrecords
 
+# Search for all keywords and concatenate as CSV
+def extractrecordkeywords(r):
+    keywords=''
+    for k1 in r.identification.keywords:
+        for k2 in k1['keywords']:
+            keywords+=k2+','
+    if keywords[-1:]==',':
+        keywords=keywords[:-1]
+    return keywords
+
 def getrecordfields(r):
     date=r.identification.date[0].date
     fields = {
         'id': r.identifier,
         'title': r.identification.title,
-        'contactorg': r.identification.contact[0].organization,
+#        'contactorg': r.identification.contact[0].organization,
         'year': str(dateutil.parser.parse(date).year) if date else '',
-        'bb': r.identification.extent.boundingBox
+        'bb': r.identification.extent.boundingBox,
+        'keywords': extractrecordkeywords(r)
         }
     return fields
 
@@ -201,6 +212,11 @@ def setdefaultfieldsprops():
             'width': 128,
             'oft': ogr.OFTString
             },
+        'keywords': {
+            'name': 'keywords',
+            'width': 128,
+            'oft': ogr.OFTString
+            }
         }
     return fieldsprops
 
@@ -228,10 +244,11 @@ def checkfields(fieldskeys=None):
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
 # Select fields to export
-[fieldskeys, fieldsprops] = checkfields()
+fieldskeys=['keywords', 'title']
+[fieldskeys, fieldsprops] = checkfields(fieldskeys)
 
 # Get the metadata
-cswrecords = getcswrecords(csw, maxiter=2)
+cswrecords = getcswrecords(csw, maxiter=100)
 
 # Export to Shapefile
 exporttoshp(cswrecords, fieldskeys, fieldsprops)
