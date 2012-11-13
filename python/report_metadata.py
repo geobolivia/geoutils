@@ -14,17 +14,21 @@ import osgeo.osr
 from osgeo import ogr
 from unidecode import unidecode
 
-def getcswrecords(csw):
+def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
+    if maxiter is None:
+        maxiter=100
+    if maxrecordsinit is None:
+        maxrecordsinit=5
+    if factormult is None:
+        factormult=2
     # Logica para recuperar todos los metadatos
     cswrecords=dict()
     startposition=0
-    maxrecordsinit=5
     maxrecords=maxrecordsinit
     more=True
     iter=0
     matches = None
-    factormult = 2
-    while iter < 2 and more:
+    while iter < maxiter and more:
         iter = iter+1
         if matches and startposition + maxrecords > matches:
             maxrecords = matches - startposition
@@ -195,7 +199,7 @@ def exporttoshp(cswrecords):
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
 # Get the metadata
-cswrecords = getcswrecords(csw)
+cswrecords = getcswrecords(csw, maxiter=2)
 
 # Export to Shapefile
 exporttoshp(cswrecords)
