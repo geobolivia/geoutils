@@ -202,8 +202,11 @@ def setdefaultfieldskeys():
 def checkfields(fieldskeys=None, fieldsnames=None):
     if fieldskeys is None:
         fieldskeys=setdefaultfieldskeys()
-    if fieldsnames is None or not len(fieldsnames) == len(fieldskeys):
+    try:
+        fieldsnames = {k: fieldsnames[k] for k in fieldskeys}
+    except:
         fieldsnames = {k: k for k in fieldskeys}
+
     return [fieldskeys, fieldsnames]
 
 # Connect to the catalog
