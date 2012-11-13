@@ -106,7 +106,7 @@ def getrecordfields(r, fieldskeys):
 
 
 def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
-    matrix=[fieldsnames]
+    matrix=[fieldsnames.values()]
     for rec in cswrecords:
         r=cswrecords[rec]
         if r:
@@ -117,16 +117,8 @@ def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
 
     return matrix
 
-def setdefaultfieldskeys():
-    return ['id', 'title', 'year', 'contactorg']
-
 # Export to a CSV file
-def exporttocsv(cswrecords, fieldskeys=None, fieldsnames=None):
-    if fieldskeys is None:
-        fieldskeys=setdefaultfieldskeys()
-    if fieldsnames is None or not len(fieldsnames) == len(fieldskeys):
-        fieldsnames = fieldskeys
-
+def exporttocsv(cswrecords, fieldskeys, fieldsnames):
     matrix=prepareforcsv(cswrecords, fieldskeys, fieldsnames)
     filename = '/tmp/tmp.csv'
     item_length = len(matrix[0])
@@ -204,6 +196,16 @@ def exporttoshp(cswrecords):
 
     shapeData.Destroy()
 
+def setdefaultfieldskeys():
+    return ['id', 'title', 'year', 'contactorg']
+
+def checkfields(fieldskeys=None, fieldsnames=None):
+    if fieldskeys is None:
+        fieldskeys=setdefaultfieldskeys()
+    if fieldsnames is None or not len(fieldsnames) == len(fieldskeys):
+        fieldsnames = {k: k for k in fieldskeys}
+    return [fieldskeys, fieldsnames]
+
 # Connect to the catalog
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
@@ -211,8 +213,9 @@ csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 cswrecords = getcswrecords(csw, maxiter=2)
 
 # Select fields to export
-fieldsnames=['id',u'A\u00F1o']
+fieldsnames={'id': 'id','year': u'A\u00F1o'}
 fieldskeys=['id', 'year']
+[fieldskeys, fieldsnames] = checkfields(fieldskeys, fieldsnames)
 
 # Export to Shapefile
 exporttoshp(cswrecords)
