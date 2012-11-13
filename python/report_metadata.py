@@ -61,6 +61,15 @@ def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
     print str(matches - len(cswrecords)) + ' metadata with error'
     return cswrecords
 
+def getrecordfields(r):
+    fields=dict()
+    fields['id']=r.identifier
+    fields['title']=r.identification.title
+    fields['contactorg']=r.identification.contact[0].organization
+    date=r.identification.date[0].date
+    fields['year']=str(dateutil.parser.parse(date).year) if date else ''
+    return fields
+
 # Class for writing in CSV without encoding problems
 # See: http://docs.python.org/2/library/csv.html#csv-examples
 class UnicodeWriter:
@@ -97,20 +106,15 @@ def prepareforcsv(cswrecords):
     matrix.insert(0,['id','Titulo',u'A\u00F1o','Contacto (organizacion)'])
     for rec in cswrecords:
         r=cswrecords[rec]
-        # Selección de los campos interesantes
-        id=r.identifier
-        title=r.identification.title
-        contactorg=r.identification.contact[0].organization
-        date=r.identification.date[0].date
-        year=str(dateutil.parser.parse(date).year) if date else ''
-
-        # Put in output array
-        matrix.append([
-                id,
-                title,
-                year,
-                contactorg
-                ])
+        if r:
+            fields=getrecordfields(r)
+            # Put in output array
+            matrix.append([
+                    fields['id'],
+                    fields['title'],
+                    fields['year'],
+                    fields['contactorg']
+                    ])
     # Transpose the matrix
     matrix=zip(*matrix)
 
