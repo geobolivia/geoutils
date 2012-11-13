@@ -61,14 +61,16 @@ def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
     print str(matches - len(cswrecords)) + ' metadata with error'
     return cswrecords
 
-def getrecordfields(r):
-    fields=dict()
-    fields['id']=r.identifier
-    fields['title']=r.identification.title
-    fields['contactorg']=r.identification.contact[0].organization
+def getrecordfields(r, fieldskeys):
     date=r.identification.date[0].date
-    fields['year']=str(dateutil.parser.parse(date).year) if date else ''
-    return fields
+    fields = {
+        'id': r.identifier,
+        'title': r.identification.title,
+        'contactorg': r.identification.contact[0].organization,
+        'year': str(dateutil.parser.parse(date).year) if date else '',
+        'bb': r.identification.extent.boundingBox
+        }
+    return [fields[k] for k in fieldskeys]
 
 # Class for writing in CSV without encoding problems
 # See: http://docs.python.org/2/library/csv.html#csv-examples
@@ -101,28 +103,29 @@ class UnicodeWriter:
         for row in rows:
             self.writerow(row)
 
-def prepareforcsv(cswrecords):
-    matrix=[]
-    matrix.insert(0,['id','Titulo',u'A\u00F1o','Contacto (organizacion)'])
+def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
+    matrix=[fieldsnames]
     for rec in cswrecords:
         r=cswrecords[rec]
         if r:
-            fields=getrecordfields(r)
-            # Put in output array
-            matrix.append([
-                    fields['id'],
-                    fields['title'],
-                    fields['year'],
-                    fields['contactorg']
-                    ])
+            matrix.append(getrecordfields(r, fieldskeys))
+
     # Transpose the matrix
     matrix=zip(*matrix)
 
     return matrix
 
+def setdefaultfieldskeys():
+    return ['id', 'title', 'year', 'contactorg']
+
 # Export to a CSV file
-def exporttocsv(cswrecords):
-    matrix=prepareforcsv(cswrecords)
+def exporttocsv(cswrecords, fieldskeys=None, fieldsnames=None):
+    if fieldskeys is None:
+        fieldskeys=setdefaultfieldskeys()
+    if fieldsnames is None or not len(fieldsnames) == len(fieldskeys):
+        fieldsnames = fieldskeys
+
+    matrix=prepareforcsv(cswrecords, fieldskeys, fieldsnames)
     filename = '/tmp/tmp.csv'
     item_length = len(matrix[0])
     with open(filename, mode='wb') as test_file:
@@ -205,8 +208,12 @@ csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 # Get the metadata
 cswrecords = getcswrecords(csw, maxiter=2)
 
+# Select fields to export
+fieldsnames=['id',u'A\u00F1o']
+fieldskeys=['id', 'year']
+
 # Export to Shapefile
 exporttoshp(cswrecords)
 
 # Export to CSV
-exporttocsv(cswrecords)
+exporttocsv(cswrecords, fieldskeys, fieldsnames)
