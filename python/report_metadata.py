@@ -102,16 +102,46 @@ def extractrecordkeywords(r):
         keywords=keywords[:-1]
     return keywords
 
+# Concatenate URL, nombre
+def extractrecordonline(fields, online):
+    wmsserver=''
+    wmslayer=''
+    urldl=''
+    urllibre=''
+    for o in online:
+        if o.protocol == 'OGC:WMS-1.1.1-http-get-map':
+            wmsserver=o.url
+            wmslayer=o.name
+        if o.protocol == 'WWW:DOWNLOAD-1.0-http--download':
+            urldl=o.url
+        if o.protocol == 'WWW:LINK-1.0-http--link':
+            urllibre=o.url
+            if o.name and o.url:
+                urllibre+=" (" + o.name + ")"
+    fields['wmsserver']=wmsserver
+    fields['wmslayer']=wmslayer
+    fields['urldl']=urldl
+    fields['urllibre']=urllibre
+    return fields
+
+def extractrecordfirstcontact(fields, c):
+    o=''
+    if len(c) > 0:
+        o=c[0].organization
+    fields['contactorg']=o;
+    return fields
+
 def getrecordfields(r):
     date=r.identification.date[0].date
     fields = {
         'id': r.identifier,
         'title': r.identification.title,
-#        'contactorg': r.identification.contact[0].organization,
         'year': str(dateutil.parser.parse(date).year) if date else '',
         'bb': r.identification.extent.boundingBox,
         'keywords': extractrecordkeywords(r)
         }
+    fields = extractrecordonline(fields, r.distribution.online)
+    fields = extractrecordfirstcontact(fields, r.identification.contact)
     return fields
 
 def getrecordfieldsintable(r, fieldskeys):
@@ -133,7 +163,7 @@ def prepareforcsv(cswrecords, fieldskeys, fieldsprops):
 # Export to a CSV file
 def exporttocsv(cswrecords, fieldskeys, fieldsprops):
     matrix=prepareforcsv(cswrecords, fieldskeys, fieldsprops)
-    filename = '/tmp/tmp.csv'
+    filename = '/tmp/catalogo_geobolivia_02.csv'
     item_length = len(matrix[0])
     with open(filename, mode='wb') as test_file:
         file_writer = UnicodeWriter(test_file)
@@ -146,7 +176,7 @@ def exporttoshp(cswrecords, fieldskeys, fieldsprops):
     spatialReference.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
     driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
     name='/tmp/tmp' + str(datetime.datetime.now()) + '.shp'
-    #name='/tmp/catalogo_geobolivia.shp'
+    name='/tmp/catalogo_geobolivia_02.shp'
     shapeData = driver.CreateDataSource(name)
 
     layer = shapeData.CreateLayer('layer1', spatialReference, osgeo.ogr.wkbPolygon)
@@ -194,28 +224,48 @@ def setdefaultfieldsprops():
     fieldsprops={
         'id': {
             'name': 'id',
+            'oft': ogr.OFTString,
             'width': 64,
-            'oft': ogr.OFTString
             },
         'year': {
             'name': u'A\u00F1o',
+            'oft': ogr.OFTInteger,
             'width': 4,
-            'oft': ogr.OFTInteger
             },
         'contactorg': {
             'name': 'contacto',
+            'oft': ogr.OFTString,
             'width': 128,
-            'oft': ogr.OFTString
             },
         'title': {
             'name': 'titulo',
+            'oft': ogr.OFTString,
             'width': 128,
-            'oft': ogr.OFTString
             },
         'keywords': {
             'name': 'keywords',
+            'oft': ogr.OFTString,
             'width': 128,
-            'oft': ogr.OFTString
+            },
+        'wmsserver': {
+            'name': 'wmsserver',
+            'oft': ogr.OFTString,
+            'width': 255,
+            },
+        'wmslayer': {
+            'name': 'wmslayer',
+            'oft': ogr.OFTString,
+            'width': 255,
+            },
+        'urldl': {
+            'name': 'urldl',
+            'oft': ogr.OFTString,
+            'width': 255,
+            },
+        'urllibre': {
+            'name': 'urllibre',
+            'oft': ogr.OFTString,
+            'width': 255,
             }
         }
     return fieldsprops
@@ -244,11 +294,12 @@ def checkfields(fieldskeys=None):
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
 # Select fields to export
-fieldskeys=['keywords', 'title']
-[fieldskeys, fieldsprops] = checkfields(fieldskeys)
+#fieldskeys=['id', 'title', 'urllibre', 'urldl']
+#[fieldskeys, fieldsprops] = checkfields(fieldskeys)
+[fieldskeys, fieldsprops] = checkfields()
 
 # Get the metadata
-cswrecords = getcswrecords(csw, maxiter=100)
+cswrecords = getcswrecords(csw, maxiter=200)
 
 # Export to Shapefile
 exporttoshp(cswrecords, fieldskeys, fieldsprops)
