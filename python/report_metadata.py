@@ -107,8 +107,8 @@ def getrecordfieldsintable(r, fieldskeys):
     fields = getrecordfields(r)
     return [fields[k] for k in fieldskeys]
 
-def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
-    matrix=[fieldsnames.values()]
+def prepareforcsv(cswrecords, fieldskeys, fieldsprops):
+    matrix=[[fieldsprops[k]['name'] for k in fieldskeys]]
     for rec in cswrecords:
         r=cswrecords[rec]
         if r:
@@ -120,8 +120,8 @@ def prepareforcsv(cswrecords, fieldskeys, fieldsnames):
     return matrix
 
 # Export to a CSV file
-def exporttocsv(cswrecords, fieldskeys, fieldsnames):
-    matrix=prepareforcsv(cswrecords, fieldskeys, fieldsnames)
+def exporttocsv(cswrecords, fieldskeys, fieldsprops):
+    matrix=prepareforcsv(cswrecords, fieldskeys, fieldsprops)
     filename = '/tmp/tmp.csv'
     item_length = len(matrix[0])
     with open(filename, mode='wb') as test_file:
@@ -201,15 +201,15 @@ def exporttoshp(cswrecords):
 def setdefaultfieldskeys():
     return ['id', 'title', 'year', 'contactorg']
 
-def checkfields(fieldskeys=None, fieldsnames=None):
+def checkfields(fieldskeys=None, fieldsprops=None):
     if fieldskeys is None:
         fieldskeys=setdefaultfieldskeys()
     try:
-        fieldsnames = {k: fieldsnames[k] for k in fieldskeys}
+        fieldsprops = {k: {'name': fieldsprops[k]['name']} for k in fieldskeys}
     except:
-        fieldsnames = {k: k for k in fieldskeys}
+        fieldsprops = {k: {'name': k} for k in fieldskeys}
 
-    return [fieldskeys, fieldsnames]
+    return [fieldskeys, fieldsprops]
 
 # Connect to the catalog
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
@@ -218,12 +218,12 @@ csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 cswrecords = getcswrecords(csw, maxiter=2)
 
 # Select fields to export
-fieldsnames={'id': 'id','year': u'A\u00F1o'}
+fieldsprops={'id': {'name': 'id'},'year': {'name': u'A\u00F1o'}, 'toto': {'name': '2'}}
 fieldskeys=['id', 'year']
-[fieldskeys, fieldsnames] = checkfields(fieldskeys, fieldsnames)
+[fieldskeys, fieldsprops] = checkfields(fieldskeys, fieldsprops)
 
 # Export to Shapefile
 exporttoshp(cswrecords)
 
 # Export to CSV
-exporttocsv(cswrecords, fieldskeys, fieldsnames)
+exporttocsv(cswrecords, fieldskeys, fieldsprops)
