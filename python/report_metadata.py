@@ -130,7 +130,7 @@ def exporttocsv(cswrecords, fieldskeys, fieldsprops):
             file_writer.writerow([x[i] if x[i] else '' for x in matrix])
 
 # Output results to a SHP
-def exporttoshp(cswrecords):
+def exporttoshp(cswrecords, fieldskeys, fieldsprops):
     spatialReference = osgeo.osr.SpatialReference()
     spatialReference.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
     driver = osgeo.ogr.GetDriverByName('ESRI Shapefile')
@@ -142,35 +142,19 @@ def exporttoshp(cswrecords):
     layerDefinition = layer.GetLayerDefn()
 
     ### Shapefile fields
-    # id
-    fieldDefn = ogr.FieldDefn('id', ogr.OFTString)
-    fieldDefn.SetWidth(64)
-    layer.CreateField(fieldDefn)
-    # anio
-    fieldDefn = ogr.FieldDefn('anio', ogr.OFTInteger)
-    fieldDefn.SetWidth(4)
-    layer.CreateField(fieldDefn)
-    # titulo
-    fieldDefn = ogr.FieldDefn('titulo', ogr.OFTString)
-    fieldDefn.SetWidth(128)
-    layer.CreateField(fieldDefn)
-    # organizacion
-    fieldDefn = ogr.FieldDefn('contacto', ogr.OFTString)
-    fieldDefn.SetWidth(128)
-    layer.CreateField(fieldDefn)
+    for k in fieldskeys:
+        # id
+        fieldDefn = ogr.FieldDefn(k, ogr.OFTString)
+        fieldDefn.SetWidth(fieldsprops[k]['width'])
+        layer.CreateField(fieldDefn)
 
     for rec in cswrecords:
         r=cswrecords[rec]
-        # Create ring
-        ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
-        # Prepare each field
-        id=r.identifier
-        title=r.identification.title
-        contactorg=r.identification.contact[0].organization
-        date=r.identification.date[0].date
-        year=str(dateutil.parser.parse(date).year) if date else ''
-        bb=r.identification.extent.boundingBox
-        if hasattr(bb,'minx'):
+        fields = getrecordfields(r)
+        if 'bb' in fields and hasattr(fields['bb'], 'minx'):
+            bb=fields['bb']
+            # Create ring
+            ring = osgeo.ogr.Geometry(osgeo.ogr.wkbLinearRing)
             west=float(bb.minx)
             east=float(bb.maxx)
             south=float(bb.miny)
@@ -187,43 +171,70 @@ def exporttoshp(cswrecords):
             feature.SetGeometry(polygon)
             feature.SetFID(featureIndex)
 
-            feature.SetField('id', id)
-            feature.SetField('anio', year)
-            if title:
-                feature.SetField('titulo', unidecode(title))
-            if contactorg:
-                feature.SetField('contacto', unidecode(contactorg))
+            for k in fieldskeys:
+                if fields[k]:
+                    feature.SetField(k, unidecode(fields[k]))
 
             layer.CreateFeature(feature)
 
     shapeData.Destroy()
 
-def setdefaultfieldskeys():
-    return ['id', 'title', 'year', 'contactorg']
+def setdefaultfieldsprops():
+    fieldsprops={
+        'id': {
+            'name': 'id',
+            'width': 64,
+            'oft': ogr.OFTString
+            },
+        'year': {
+            'name': u'A\u00F1o',
+            'width': 4,
+            'oft': ogr.OFTInteger
+            },
+        'contactorg': {
+            'name': 'contacto',
+            'width': 128,
+            'oft': ogr.OFTString
+            },
+        'title': {
+            'name': 'titulo',
+            'width': 128,
+            'oft': ogr.OFTString
+            },
+        }
+    return fieldsprops
 
-def checkfields(fieldskeys=None, fieldsprops=None):
+def checkfields(fieldskeys=None):
+    fieldspropsdefault=setdefaultfieldsprops()
+
     if fieldskeys is None:
-        fieldskeys=setdefaultfieldskeys()
-    try:
-        fieldsprops = {k: {'name': fieldsprops[k]['name']} for k in fieldskeys}
-    except:
-        fieldsprops = {k: {'name': k} for k in fieldskeys}
+        fieldskeys=fieldspropsdefault.keys()
+
+    fieldsprops=dict()
+    for k in fieldskeys:
+        try:
+            fieldsprops[k]=fieldspropsdefault[k]
+        except Exception:
+            print "Unknown key: " + k + " - discarded"
+            pass
+    fieldskeys=fieldsprops.keys()
+
+    if len(fieldskeys) == 0:
+        [fieldskeys, fieldsprops] = checkfields(fieldspropsdefault.keys())
 
     return [fieldskeys, fieldsprops]
 
 # Connect to the catalog
 csw = CatalogueServiceWeb('http://www.geo.gob.bo/geonetwork/srv/es/csw')
 
+# Select fields to export
+[fieldskeys, fieldsprops] = checkfields()
+
 # Get the metadata
 cswrecords = getcswrecords(csw, maxiter=2)
 
-# Select fields to export
-fieldsprops={'id': {'name': 'id'},'year': {'name': u'A\u00F1o'}, 'toto': {'name': '2'}}
-fieldskeys=['id', 'year']
-[fieldskeys, fieldsprops] = checkfields(fieldskeys, fieldsprops)
-
 # Export to Shapefile
-exporttoshp(cswrecords)
+exporttoshp(cswrecords, fieldskeys, fieldsprops)
 
 # Export to CSV
 exporttocsv(cswrecords, fieldskeys, fieldsprops)
