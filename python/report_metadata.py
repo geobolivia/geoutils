@@ -68,7 +68,7 @@ def getcswrecords(csw, maxiter=None, maxrecordsinit=None, factormult=None):
         try:
             csw.getrecords(outputschema='http://www.isotc211.org/2005/gmd',esn='full', startposition=startposition, maxrecords=maxrecords)
         except:
-            print 'error'
+            print 'Error in getting csw records'
 
         matches=csw.results['matches']
 
