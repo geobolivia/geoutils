@@ -68,13 +68,12 @@ for l in layers:
 	layermd=l[1]
 	tmp=re_layerid.split(layermd.id)
 	layername=tmp[-1:][0]
-	print layername
 	workspacename=tmp[-2:-1][0]
-	print workspacename
 	workspacepath=os.path.join(outputpath,workspacename)
 	if not os.access(workspacepath, os.W_OK):
 		os.mkdir(workspacepath)
 	filebase=os.path.join(outputpath,workspacename,layername)
+	print workspacename + '/' + layername
 	
 	# Metadata
 	# TODO - manage various Metadata Urls
