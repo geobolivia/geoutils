@@ -19,7 +19,7 @@ import getpass
 # ogr: WFS, SHP
 #  http://www.gdal.org/ogr/drv_wfs.html
 #  http://www.paolocorti.net/2011/03/23/a-quick-look-at-the-wfs-gdal-driver/
-# owslib: WMS, CSW
+# owslib: WMS (CSW)
 #  http://geopython.github.com/OWSLib/
 # gsconfig: SLD
 #  http://dwins.github.com/gsconfig.py/
@@ -41,12 +41,35 @@ def write_sld_style(style,filebase):
 	with open(stylefile, 'w') as f:
 		f.write(style.sld_body)
 
+def write_shp_data(baseurl,workspacebase,workspacename,layername):
+	wfsdriver = ogr.GetDriverByName('WFS')
+	shpdriver = ogr.GetDriverByName("ESRI Shapefile")
+	shpdatasource = shpdriver.CreateDataSource(workspacebase)
+
+	replaceshp=True
+	if replaceshp:
+		itodelete=None
+		for i in range(0, shpdatasource.GetLayerCount()):
+			shpl = shpdatasource.GetLayerByIndex(i)
+			if shpl.GetName() == layername:
+				itodelete=i
+		if itodelete is not None:
+			shpdatasource.DeleteLayer(itodelete)
+			shpdatasource.SyncToDisk()
+
+	layerwfsurl=baseurl+'/'+workspacename+'/'+layername+'/wfs'
+	wfs = wfsdriver.Open("WFS:"+layerwfsurl)
+	wfsl = wfs.GetLayerByName(workspacename+':'+layername)
+	try:
+		shpdatasource.CopyLayer(wfsl, layername)
+		shpdatasource.SyncToDisk()
+	except:
+		pass
+
 # Input arguments
 baseurl='http://www.geo.gob.bo/geoserver/'
-workspacename='otros'
-layername='Ecoregiones_WWF'
-wmsurl=baseurl+'/'+workspacename+'/wms'
-#wmsurl=baseurl+workspacename+'/'+layername+'/wms'
+#wmsurl=baseurl+'/'+workspacename+'/wms'
+wmsurl=baseurl+'/otros/mosaico_landsat/wms'
 outputpath='/tmp/'
 re_layerid=compile(":")
 
@@ -56,7 +79,6 @@ stylesurl=resturl+'/styles/'
 user = raw_input("User: ")
 pw = getpass.getpass('Password: ')
 cat = Catalog(resturl, username=user, password=pw)
-
 
 # Get capabilities for this layer
 wms = WebMapService(wmsurl, version='1.1.1')
@@ -86,3 +108,15 @@ for l in layers:
 		reststyle=cat.get_style(s)
 		write_sld_style(reststyle,filebase)
 
+	# Data
+	# TODO: download raster layers
+	# Try WFS
+	try:
+		write_shp_data(baseurl,workspacepath,workspacename,layername)
+	except:
+		# Try WCS
+#		try:
+#			
+#		except:
+#			pass
+		pass	
