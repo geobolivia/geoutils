@@ -25,16 +25,14 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 # gsconfig: SLD
 #  http://dwins.github.com/gsconfig.py/
 
-def write_xml_metadata(url,filebase):
-	# TODO download the PDF too
-
+def write_metadata(url,filebase,extension):
 	# Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
 	try:
 		mdtuple=urlparse(url)
-		xmlpath=urljoin(mdtuple.path,'iso19139.xml')
+		xmlpath=urljoin(mdtuple.path,'iso19139' + extension)
 		xmltuple=[mdtuple.scheme, mdtuple.netloc, xmlpath, mdtuple.params, mdtuple.query, mdtuple.fragment]
 		xmlurl=urlunparse(xmltuple)
-		urlretrieve(xmlurl, filebase+'.xml')
+		urlretrieve(xmlurl, filebase+extension)
 	except:
 		pass
 
@@ -130,7 +128,8 @@ for l in layers:
 	# Metadata
 	# TODO - manage various Metadata Urls
 	for m in layermd.metadataUrls:
-		write_xml_metadata(m['url'],filebase)
+		write_metadata(m['url'],filebase,'.xml')
+		write_metadata(m['url'],filebase,'.pdf')
 
 	# Style
 	# TODO - manage various Metadata styles
