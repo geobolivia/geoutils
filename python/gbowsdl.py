@@ -1,7 +1,4 @@
 #!/usr/bin/python
-""" get the metadata xml file from wms capabilities
-args:
-""" 
 from osgeo import ogr
 from osgeo import gdal
 from owslib.wms import WebMapService
@@ -58,7 +55,7 @@ def write_shp_data(baseurl,workspacebase,workspacename,layername):
 			shpdatasource.DeleteLayer(itodelete)
 			shpdatasource.SyncToDisk()
 
-	layerwfsurl=baseurl+'/'+workspacename+'/'+layername+'/wfs'
+	layerwfsurl = forge_ows_url(baseurl, 'wfs', workspacename, layername)
 	wfs = wfsdriver.Open("WFS:"+layerwfsurl)
 	wfsl = wfs.GetLayerByName(workspacename+':'+layername)
 	try:
@@ -69,7 +66,8 @@ def write_shp_data(baseurl,workspacebase,workspacename,layername):
 
 def write_tiff_data(baseurl,workspacebase,workspacename,layername):
 	# The WCS driver needs a temporary XML file
-	serviceURL = baseurl+'/'+workspacename+'/'+layername+'/wcs?'
+	# http://www.gdal.org/frmt_wcs.html
+	serviceURL = forge_ows_url(baseurl, 'wcs', workspacename, layername)
 	coverageName = workspacename+':'+layername
 	tmpxmlfile = '/tmp/gdalwcsdataset.xml'
 	top = Element('WCS_GDAL')
@@ -81,6 +79,7 @@ def write_tiff_data(baseurl,workspacebase,workspacename,layername):
 		f.write(tostring(top))
 
 	wcsds=gdal.Open(tmpxmlfile)	
+	# http://www.gdal.org/frmt_gtiff.html
 	gtiffdriver = gdal.GetDriverByName("GTiff")
 
 	try:
@@ -93,61 +92,85 @@ def write_tiff_data(baseurl,workspacebase,workspacename,layername):
 		wcsds = None
 		raise
 
-# Input arguments
-baseurl='http://www.geo.gob.bo/geoserver/'
-#wmsurl=baseurl+'/otros/wms'
-#wmsurl=baseurl+'/otros/mosaico_landsat/wms'
-wmsurl=baseurl+'/mapashistoricos/mapahistorico1834/wms'
-outputpath='/tmp/'
-re_layerid=compile(":")
+def forge_ows_url(baseurl, ows='wms', workspacename=None, layername=None):
+	#if not workspacename is None:
+	#	baseurl += '/' + workspacename
+	#	if not layername is None:
+	#		baseurl += '/' + layername
+	baseurl += '/' + ows + '?'
+	return baseurl
 
-# Connect to REST GeoServer
-resturl=baseurl+'rest'
-stylesurl=resturl+'/styles/'
-user = raw_input("User: ")
-pw = getpass.getpass('Password: ')
-cat = Catalog(resturl, username=user, password=pw)
-
-# Get capabilities for this layer
-wms = WebMapService(wmsurl, version='1.1.1')
-
-layers=wms.items()
-
-for l in layers:
-	layerid=l[0]
-	layermd=l[1]
-	tmp=re_layerid.split(layermd.id)
-	layername=tmp[-1:][0]
-	workspacename=tmp[-2:-1][0]
-	workspacepath=os.path.join(outputpath,workspacename)
-	if not os.access(workspacepath, os.W_OK):
-		os.mkdir(workspacepath)
-	filebase=os.path.join(outputpath,workspacename,layername)
-	print workspacename + '/' + layername
-	
+def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspacepath):
 	# Metadata
 	# TODO - manage various Metadata Urls
 	for m in layermd.metadataUrls:
+		if debug:
+			print '  xml and pdf metadata'
 		write_metadata(m['url'],filebase,'.xml')
 		write_metadata(m['url'],filebase,'.pdf')
 
 	# Style
 	# TODO - manage various Metadata styles
 	for s in layermd.styles.keys():
-		reststyle=cat.get_style(s)
+		if debug:
+			print '  sld style'
+		reststyle = cat.get_style(s)
 		write_sld_style(reststyle,filebase)
 
 	# Data
 	# TODO: download raster layers
 	# Try WFS
 	try:
+		if debug:
+			print '  vectorial data via wfs'
 		write_shp_data(baseurl,workspacepath,workspacename,layername)
 	except:
 		# Try WCS
 		try:
-			print 'Download via WCS'
+			if debug:
+				print '  error in downloading vetor data'
+				print '  try raster data via wcs'
 			write_tiff_data(baseurl,workspacepath,workspacename,layername)
 		except Exception as e:
 			print "Unexpected error:", e
 			pass
 		pass	
+
+	print '--Layer downloaded'
+
+def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
+
+	# Connect to REST GeoServer
+	if cat is None:
+		resturl=baseurl+'rest'
+		stylesurl=resturl+'/styles/'
+		if user is None:
+			user = raw_input("User: ")
+		if pw is None:
+			pw = getpass.getpass('Password: ')
+		cat = Catalog(resturl, username=user, password=pw)
+
+	# Get capabilities for this layer
+	wmsurl = forge_ows_url(baseurl, 'wms', workspacename, layername)
+	wms = WebMapService(wmsurl, version='1.1.1')
+	layers=wms.items()
+
+	for l in layers:
+		layerid = l[0]
+		layermd = l[1]
+
+		re_layerid = compile(":")
+		tmp = re_layerid.split(layermd.id)
+		layername = tmp[-1:][0]
+		workspacename = tmp[-2:-1][0]
+		workspacepath = os.path.join(outputpath,workspacename)
+		if not os.access(workspacepath, os.W_OK):
+			os.mkdir(workspacepath)
+		filebase = os.path.join(outputpath,workspacename,layername)
+
+		if debug:
+			print '--Get layer ' + workspacename + ':' + layername
+		get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspacepath)
+		
+version = '0.1'
+debug = True
