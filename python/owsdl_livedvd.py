@@ -17,6 +17,7 @@ else:
 	pw = properties.pw
 csvfilename = properties.csvfilename
 outputpath = properties.outputpath
+firstdata = properties.firstdata
 
 resturl=baseurl+'rest'
 stylesurl=resturl+'/styles/'
@@ -33,6 +34,9 @@ def read_csv(csvfilename):
 
 #datalist = [('otros', 'mosaico_landsat'), ('otros', 'Spot'), ('inra', 'Predios2012')]
 datalist = read_csv(csvfilename)
+if firstdata in datalist:
+	firstindex = datalist.index(datalist)
+	datalist = datalist[firstindex:]
 
 # Loop on the layers
 for d in datalist:
