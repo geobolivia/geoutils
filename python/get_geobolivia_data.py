@@ -14,6 +14,7 @@ from re import compile
 from re import split
 from geoserver.catalog import Catalog
 import getpass
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 # Libraries
 # ogr: WFS, SHP
@@ -25,6 +26,8 @@ import getpass
 #  http://dwins.github.com/gsconfig.py/
 
 def write_xml_metadata(url,filebase):
+	# TODO download the PDF too
+
 	# Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
 	try:
 		mdtuple=urlparse(url)
@@ -64,12 +67,39 @@ def write_shp_data(baseurl,workspacebase,workspacename,layername):
 		shpdatasource.CopyLayer(wfsl, layername)
 		shpdatasource.SyncToDisk()
 	except:
-		pass
+		raise
+
+def write_tiff_data(baseurl,workspacebase,workspacename,layername):
+	# The WCS driver needs a temporary XML file
+	serviceURL = baseurl+'/'+workspacename+'/'+layername+'/wcs?'
+	coverageName = workspacename+':'+layername
+	tmpxmlfile = '/tmp/gdalwcsdataset.xml'
+	top = Element('WCS_GDAL')
+	child = SubElement(top, 'ServiceURL')
+	child.text = serviceURL
+	child = SubElement(top, 'CoverageName')
+	child.text = coverageName
+	with open(tmpxmlfile, "w") as f:
+		f.write(tostring(top))
+
+	wcsds=gdal.Open(tmpxmlfile)	
+	gtiffdriver = gdal.GetDriverByName("GTiff")
+
+	try:
+		# TODO use a function for showing copy progress
+		gtiffds = gtiffdriver.CreateCopy(workspacebase+'/'+layername+'.tiff', wcsds, 0)
+		gtiffds = None
+		wcsds = None
+	except:
+		gtiffds = None
+		wcsds = None
+		raise
 
 # Input arguments
 baseurl='http://www.geo.gob.bo/geoserver/'
-#wmsurl=baseurl+'/'+workspacename+'/wms'
-wmsurl=baseurl+'/otros/mosaico_landsat/wms'
+#wmsurl=baseurl+'/otros/wms'
+#wmsurl=baseurl+'/otros/mosaico_landsat/wms'
+wmsurl=baseurl+'/mapashistoricos/mapahistorico1834/wms'
 outputpath='/tmp/'
 re_layerid=compile(":")
 
@@ -115,8 +145,10 @@ for l in layers:
 		write_shp_data(baseurl,workspacepath,workspacename,layername)
 	except:
 		# Try WCS
-#		try:
-#			
-#		except:
-#			pass
+		try:
+			print 'Download via WCS'
+			write_tiff_data(baseurl,workspacepath,workspacename,layername)
+		except Exception as e:
+			print "Unexpected error:", e
+			pass
 		pass	
