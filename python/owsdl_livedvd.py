@@ -4,19 +4,22 @@ import getpass
 import csv
 from geoserver.catalog import Catalog
 
-# Input arguments
-baseurl='http://www.geo.gob.bo/geoserver/'
-outputpath='/tmp/'
-user = raw_input("User: ")
-pw = getpass.getpass('Password: ')
-csvfilename = 'prioridad_test.csv'
+# Input parameters
+import properties
+baseurl = properties.baseurl
+if properties.user is None:
+	user = raw_input("User: ")
+else:
+	user = properties.user
+if properties.pw is None:
+	pw = getpass.getpass('Password: ')
+else:
+	pw = properties.pw
+csvfilename = properties.csvfilename
+outputpath = properties.outputpath
 
 resturl=baseurl+'rest'
 stylesurl=resturl+'/styles/'
-if user is None:
-	user = raw_input("User: ")
-if pw is None:
-	pw = getpass.getpass('Password: ')
 cat = Catalog(resturl, username=user, password=pw)
 
 # Read CSV file
