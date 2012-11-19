@@ -12,6 +12,7 @@ from re import split
 from geoserver.catalog import Catalog
 import getpass
 from xml.etree.ElementTree import Element, SubElement, tostring
+import time
 
 # Libraries
 # ogr: WFS, SHP
@@ -22,29 +23,59 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 # gsconfig: SLD
 #  http://dwins.github.com/gsconfig.py/
 
+def test_update_file(filename, replaceTime):
+	now = time.time()
+	too_old = now - replaceTime
+	try:
+		modification_time = os.path.getctime(filename)
+	except OSError:
+		pass
+		return True
+
+	if debug:
+		print '    the file exists and is new - download aborted'
+
+	if modification_time < too_old:
+		return True
+
+
+	return False
+
 def write_metadata(url,filebase,extension):
+	filename = filebase + extension
+
+	if not test_update_file(filename, replaceTime):
+		return
+
 	# Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
 	try:
 		mdtuple=urlparse(url)
 		xmlpath=urljoin(mdtuple.path,'iso19139' + extension)
 		xmltuple=[mdtuple.scheme, mdtuple.netloc, xmlpath, mdtuple.params, mdtuple.query, mdtuple.fragment]
 		xmlurl=urlunparse(xmltuple)
-		urlretrieve(xmlurl, filebase+extension)
+		urlretrieve(xmlurl, filename)
 	except:
 		pass
 
 def write_sld_style(style,filebase):
 	# TODO: wrap SLD in human-readable style
 	stylefile=filebase+'.sld'
+
+	if not test_update_file(stylefile, replaceTime):
+		return
+
 	with open(stylefile, 'w') as f:
 		f.write(style.sld_body)
 
 def write_shp_data(baseurl,workspacebase,workspacename,layername):
+	if not test_update_file(os.path.join(workspacebase, layername + '.shp'), replaceTime):
+		return
+
 	wfsdriver = ogr.GetDriverByName('WFS')
 	shpdriver = ogr.GetDriverByName("ESRI Shapefile")
 	shpdatasource = shpdriver.CreateDataSource(workspacebase)
 
-	replaceshp=replace
+	replaceshp=True
 	if replaceshp:
 		itodelete=None
 		for i in range(0, shpdatasource.GetLayerCount()):
@@ -65,6 +96,10 @@ def write_shp_data(baseurl,workspacebase,workspacename,layername):
 		raise
 
 def write_tiff_data(baseurl,workspacebase,workspacename,layername):
+	gtifffilename = os.path.join(workspacebase, layername + '.tiff')
+	if not test_update_file(gtifffilename, replaceTime):
+		return
+
 	# The WCS driver needs a temporary XML file
 	# http://www.gdal.org/frmt_wcs.html
 	serviceURL = forge_ows_url(baseurl, 'wcs', workspacename, layername)
@@ -84,7 +119,7 @@ def write_tiff_data(baseurl,workspacebase,workspacename,layername):
 
 	try:
 		# TODO use a function for showing copy progress
-		gtiffds = gtiffdriver.CreateCopy(workspacebase+'/'+layername+'.tiff', wcsds, 0)
+		gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0)
 		gtiffds = None
 		wcsds = None
 	except:
@@ -155,6 +190,9 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 	wms = WebMapService(wmsurl, version='1.1.1')
 	layers=wms.items()
 
+	if len(layers) == 0:
+		print '  ERROR: layer not found on WMS server'
+
 	for l in layers:
 		layerid = l[0]
 		layermd = l[1]
@@ -174,4 +212,4 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 		
 version = '0.1'
 debug = True
-replace = False
+replaceTime = 24000
