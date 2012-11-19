@@ -44,7 +44,7 @@ def write_shp_data(baseurl,workspacebase,workspacename,layername):
 	shpdriver = ogr.GetDriverByName("ESRI Shapefile")
 	shpdatasource = shpdriver.CreateDataSource(workspacebase)
 
-	replaceshp=True
+	replaceshp=replace
 	if replaceshp:
 		itodelete=None
 		for i in range(0, shpdatasource.GetLayerCount()):
@@ -174,3 +174,4 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 		
 version = '0.1'
 debug = True
+replace = False
