@@ -35,7 +35,7 @@ def read_csv(csvfilename):
 #datalist = [('otros', 'mosaico_landsat'), ('otros', 'Spot'), ('inra', 'Predios2012')]
 datalist = read_csv(csvfilename)
 if firstdata in datalist:
-	firstindex = datalist.index(datalist)
+	firstindex = datalist.index(firstdata)
 	datalist = datalist[firstindex:]
 
 # Loop on the layers
