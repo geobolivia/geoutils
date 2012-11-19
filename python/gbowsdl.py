@@ -163,11 +163,11 @@ def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspa
 		# Try WCS
 		try:
 			if debug:
-				print '  error in downloading vetor data'
+				print '  error in downloading vector data'
 				print '  try raster data via wcs'
 			write_tiff_data(baseurl,workspacepath,workspacename,layername)
 		except Exception as e:
-			print "Unexpected error:", e
+			print "    ERROR in downloading raster file:", e
 			pass
 		pass	
 

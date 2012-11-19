@@ -43,5 +43,5 @@ for d in datalist:
 	try:
 		gbowsdl.get_workspace(layerbaseurl, outputpath, workspacename, layername, cat=cat)
 	except Exception as e:
-		print "Unexpected error:", e
+		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
 		pass
