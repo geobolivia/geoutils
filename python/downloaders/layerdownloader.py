@@ -11,6 +11,16 @@ from urlparse import urlparse
 from urlparse import urlunparse
 from urlparse import urljoin
 from urllib import urlretrieve
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+# Libraries
+# ogr: WFS, SHP
+#  http://www.gdal.org/ogr/drv_wfs.html
+#  http://www.paolocorti.net/2011/03/23/a-quick-look-at-the-wfs-gdal-driver/
+# owslib: WMS (CSW)
+#  http://geopython.github.com/OWSLib/
+# gsconfig: SLD
+#  http://dwins.github.com/gsconfig.py/
 
 class LayerDownloader:
 	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', replaceTime=None, debug=None):
@@ -169,3 +179,20 @@ class LayerDownloader:
                                 pass
                         pass
                 print '--Layer downloaded'
+
+        def test_update_file(filename, replaceTime):
+                now = time.time()
+                too_old = now - replaceTime
+                try:
+                        modification_time = os.path.getctime(filename)
+                except OSError:
+                        pass
+                        return True
+
+                if debug:
+                        print '    the file exists and is new - download aborted'
+
+                if modification_time < too_old:
+                        return True
+
+                return False

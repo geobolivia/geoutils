@@ -4,6 +4,8 @@ import getpass
 import csv
 from geoserver.catalog import Catalog
 
+from downloaders import Downloader
+
 # Input parameters
 import properties
 geoserverurl = properties.baseurl
@@ -41,7 +43,9 @@ for d in datalist:
 	print 'Download layer ' + workspacename + ':' + layername
 	#layerbaseurl = baseurl + workspacename + '/' + layername + '/'
 #	try:
-	gbowsdl.get_workspace(geoserverurl, outputpath, workspacename, layername, user=user, pw=pw)
+        d = Downloader(geoserverurl, user, pw, workspacename, layername)
+        d.getLayers(outputpath)
+	#gbowsdl.get_workspace(geoserverurl, outputpath, workspacename, layername, user=user, pw=pw)
 #	except Exception as e:
 #		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
 #		pass

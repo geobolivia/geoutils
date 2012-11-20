@@ -2,11 +2,13 @@ from downloaders.layerdownloader import LayerDownloader
 
 from owslib.wms import WebMapService
 
+import os
+
 class Downloader:
 	"""
 	Class for downloading and managing a repository of GeoBolivia data.
 	"""
-	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None, workspace=None, layer=None):
+	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None, workspace=None, layer=None, debug=None):
                 """
                 Constructor.
                 ldList: a list of LayerDownloader objects
@@ -17,6 +19,9 @@ class Downloader:
                 self.restConnection = LayerDownloader.connectToRest(geoserverUrl + '/rest/', username=username, password=password)
                 self.workspace = workspace
                 self.layer = layer
+                self.debug = debug
+                if debug is None:
+                        debug = True
 
         def forgeOwsUrl(self, ows='wms'):
                 baseUrl = self.geoserverUrl
@@ -45,3 +50,19 @@ class Downloader:
                 ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl)
                 self.ldList.append(ld)
                 return ld
+
+        def getLayers(self, outputpath):
+                layers = self.addLayersFromWms()
+
+                if len(layers) == 0:
+                        print '  ERROR: layer not found on WMS server ' + self.workspace + ':' + self.layer
+
+                for ld in layers:
+                        workspacepath = os.path.join(outputpath,ld.workspace)
+                        if not os.access(workspacepath, os.W_OK):
+                                os.mkdir(workspacepath)
+                        filebase = os.path.join(workspacepath,ld.layer)
+
+                        if self.debug:
+                                print '--Get layer ' + ld.layerMetadata.id
+                        ld.getLayer(filebase, workspacepath)

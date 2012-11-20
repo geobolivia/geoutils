@@ -25,32 +25,6 @@ from downloaders import Downloader
 # gsconfig: SLD
 #  http://dwins.github.com/gsconfig.py/
 
-#	def setLayerId(layer_id):
-#		re_layerid = compile(":")
-#		tmp = re_layerid.split(layer_id)
-#		self.layername = tmp[-1:][0]
-#		self.workspacename = tmp[-2:-1][0]
-#
-#	def setWorkspace(workspace):
-#		return workspacename + ':' + layername
-
-def test_update_file(filename, replaceTime):
-	now = time.time()
-	too_old = now - replaceTime
-	try:
-		modification_time = os.path.getctime(filename)
-	except OSError:
-		pass
-		return True
-
-	if debug:
-		print '    the file exists and is new - download aborted'
-
-	if modification_time < too_old:
-		return True
-
-
-	return False
 
 #def write_metadata(url,filebase,extension):
 #	filename = filebase + extension
@@ -176,26 +150,26 @@ def test_update_file(filename, replaceTime):
 #
 #	print '--Layer downloaded'
 
-def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
-
-	# Connect to REST GeoServer
-        d = Downloader(baseurl, user, pw, workspacename, layername)
-
-        layers = d.addLayersFromWms()
-
-	if len(layers) == 0:
-		print '  ERROR: layer not found on WMS server ' + workspacename + ':' + layername
-
-	for ld in layers:
-
-		workspacepath = os.path.join(outputpath,ld.workspace)
-		if not os.access(workspacepath, os.W_OK):
-			os.mkdir(workspacepath)
-		filebase = os.path.join(workspacepath,ld.layer)
-
-		if debug:
-			print '--Get layer ' + ld.layerMetadata.id
-		ld.getLayer(filebase, workspacepath)
+#def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
+#
+#	# Connect to REST GeoServer
+ #       d = Downloader(baseurl, user, pw, workspacename, layername)
+#
+ #       layers = d.addLayersFromWms()
+#
+#	if len(layers) == 0:
+#		print '  ERROR: layer not found on WMS server ' + workspacename + ':' + layername
+#
+#	for ld in layers:
+#
+#		workspacepath = os.path.join(outputpath,ld.workspace)
+#		if not os.access(workspacepath, os.W_OK):
+#			os.mkdir(workspacepath)
+#		filebase = os.path.join(workspacepath,ld.layer)
+#
+#		if debug:
+#			print '--Get layer ' + ld.layerMetadata.id
+#		ld.getLayer(filebase, workspacepath)
 
 version = '0.1'
 debug = True
