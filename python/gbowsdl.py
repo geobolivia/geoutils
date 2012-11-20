@@ -138,14 +138,6 @@ def test_update_file(filename, replaceTime):
 #		wcsds = None
 #		raise
 
-def forge_ows_url(baseurl, ows='wms', workspacename=None, layername=None):
-	#if not workspacename is None:
-	#	baseurl += '/' + workspacename
-	#	if not layername is None:
-	#		baseurl += '/' + layername
-	baseurl += '/' + ows + '?'
-	return baseurl
-
 def get_layer(ld, layermd, filebase, cat, workspacename, layername, workspacepath):
 	# Metadata
 	# TODO - manage various Metadata Urls
