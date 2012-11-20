@@ -162,7 +162,7 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                logging.debug('layer "' + self.layerMetadata.id + '" - starting')
+                logging.info('layer "' + self.layerMetadata.id + '" - starting')
                 t1 = datetime.datetime.now()
 
                 someError = False
