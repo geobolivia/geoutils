@@ -19,5 +19,5 @@ firstLayerFilter = properties.firstLayerFilter
 
 d = Downloader(geoserverUrl, user, pw)
 d.addLayersFromWms()
-d.filterLayersFromCsv(csvFilename, firstLayerFilter)
+d.filterAndOrderLayersFromCsv(csvFilename, firstLayerFilter)
 d.getLayers(outputPath)
