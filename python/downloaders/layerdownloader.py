@@ -31,8 +31,14 @@ class LayerDownloader:
                 else:
                         regexp = compile(":")
                         tmp = regexp.split(layerMetadata.id)
-                        self.workspace = tmp[0]
-                        self.layer = tmp[1]
+                        if len(tmp) == 2:
+                                self.workspace = tmp[0]
+                                self.layer = tmp[1]
+                        elif len(tmp) == 1:
+                                self.workspace = None
+                                self.layer = tmp[0]
+                        else:
+                                print 'ERROR - the layerId is incorrect (more than one ":" characters)', layerMetadata.id
 
                 self.geoserverUrl = geoserverUrl
 

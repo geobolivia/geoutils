@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import gbowsdl
 import getpass
 import csv
 from geoserver.catalog import Catalog
@@ -17,34 +16,36 @@ if properties.pw is None:
 	pw = getpass.getpass('Password: ')
 else:
 	pw = properties.pw
-csvfilename = properties.csvfilename
+csvFilename = properties.csvfilename
 outputpath = properties.outputpath
-firstdata = properties.firstdata
+firstLayerFilter = properties.firstdata
 
-# Read CSV file
-def read_csv(csvfilename):
-	datalist = []
-	with open(csvfilename, 'rb') as csvfile:
-		csvreader = csv.reader(csvfile, delimiter=';', quotechar='"')
-		for row in csvreader:
-			datalist.append([row[0], row[1]])
-	return datalist
+## Read CSV file
+#def read_csv(csvfilename):
+#	datalist = []
+#	with open(csvfilename, 'rb') as csvfile:
+#		csvreader = csv.reader(csvfile, delimiter=';', quotechar='"')
+#		for row in csvreader:
+#			datalist.append([row[0], row[1]])
+#	return datalist
 
 #datalist = [('otros', 'mosaico_landsat'), ('otros', 'Spot'), ('inra', 'Predios2012')]
-datalist = read_csv(csvfilename)
-if firstdata in datalist:
-	firstindex = datalist.index(firstdata)
-	datalist = datalist[firstindex:]
+#datalist = read_csv(csvfilename)
+#if firstdata in datalist:
+#	firstindex = datalist.index(firstdata)
+#	datalist = datalist[firstindex:]
 
 # Loop on the layers
-for d in datalist:
-	workspacename = d[0]
-	layername = d[1]
-	print 'Download layer ' + workspacename + ':' + layername
+#for d in datalist:
+#	workspacename = d[0]
+#	layername = d[1]
+#	print 'Download layer ' + workspacename + ':' + layername
 	#layerbaseurl = baseurl + workspacename + '/' + layername + '/'
 #	try:
-        d = Downloader(geoserverurl, user, pw, workspacename, layername)
-        d.getLayers(outputpath)
+d = Downloader(geoserverurl, user, pw)
+d.addLayersFromWms()
+d.filterLayersFromCsv(csvFilename, firstLayerFilter)
+d.getLayers(outputpath)
 	#gbowsdl.get_workspace(geoserverurl, outputpath, workspacename, layername, user=user, pw=pw)
 #	except Exception as e:
 #		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
