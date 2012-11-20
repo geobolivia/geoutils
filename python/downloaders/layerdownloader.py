@@ -162,7 +162,7 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                logging.info('layer "' + self.layerMetadata.id + '" - start processing')
+                logging.info('layer "' + self.layerMetadata.id + '" - starting')
                 t1 = datetime.datetime.now()
 
                 someError = False
@@ -290,5 +290,5 @@ class LayerDownloader:
                         logging.debug('Force overwrite file.')
                         return True
                 else:
-                        logging.info('The file exists and will not be updated. ' + filename)
+                        logging.debug('The file exists and will not be updated. ' + filename)
                         return False
