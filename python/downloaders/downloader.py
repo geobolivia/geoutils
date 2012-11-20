@@ -60,7 +60,7 @@ class Downloader:
                 for unwanted_key in unwanted:
                         logging.debug('the layer will not be downloaded: ' + unwanted_key)
                         del tmpLayerDownloaders[unwanted_key]
-                logging.warning(str(len(unwanted)) + ' layers have been filtered and will not be downloaded')
+                logging.warning(str(len(unwanted)) + ' layers have been filtered and will not be downloaded ' + ', '.join(unwanted))
 
                 # Delete unknown layers in filter
                 notfound = set(layersFilter) - set(tmpLayerDownloaders)
