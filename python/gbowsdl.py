@@ -14,6 +14,8 @@ import getpass
 from xml.etree.ElementTree import Element, SubElement, tostring
 import time
 
+from downloaders import Downloader
+
 # Libraries
 # ogr: WFS, SHP
 #  http://www.gdal.org/ogr/drv_wfs.html
@@ -22,6 +24,15 @@ import time
 #  http://geopython.github.com/OWSLib/
 # gsconfig: SLD
 #  http://dwins.github.com/gsconfig.py/
+
+#	def setLayerId(layer_id):
+#		re_layerid = compile(":")
+#		tmp = re_layerid.split(layer_id)
+#		self.layername = tmp[-1:][0]
+#		self.workspacename = tmp[-2:-1][0]
+#
+#	def setWorkspace(workspace):
+#		return workspacename + ':' + layername
 
 def test_update_file(filename, replaceTime):
 	now = time.time()
@@ -176,14 +187,7 @@ def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspa
 def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
 
 	# Connect to REST GeoServer
-	if cat is None:
-		resturl=baseurl+'rest'
-		stylesurl=resturl+'/styles/'
-		if user is None:
-			user = raw_input("User: ")
-		if pw is None:
-			pw = getpass.getpass('Password: ')
-		cat = Catalog(resturl, username=user, password=pw)
+        d = Downloader(baseurl, user, pw)
 
 	# Get capabilities for this layer
 	wmsurl = forge_ows_url(baseurl, 'wms', workspacename, layername)
@@ -191,24 +195,23 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 	layers=wms.items()
 
 	if len(layers) == 0:
-		print '  ERROR: layer not found on WMS server'
+		print '  ERROR: layer not found on WMS server ' + workspacename + ':' + layername
 
 	for l in layers:
-		layerid = l[0]
-		layermd = l[1]
 
-		re_layerid = compile(":")
-		tmp = re_layerid.split(layermd.id)
-		layername = tmp[-1:][0]
-		workspacename = tmp[-2:-1][0]
-		workspacepath = os.path.join(outputpath,workspacename)
+                layerId= l[0]
+		ld = d.addLayerDownloader(layerId)
+                layermd = l[1]
+
+		workspacepath = os.path.join(outputpath,ld.workspace)
 		if not os.access(workspacepath, os.W_OK):
 			os.mkdir(workspacepath)
-		filebase = os.path.join(outputpath,workspacename,layername)
+		filebase = os.path.join(workspacepath,ld.layer)
 
 		if debug:
-			print '--Get layer ' + workspacename + ':' + layername
-		get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspacepath)
+			print '--Get layer ' + ld.workspace + ':' + ld.layer
+		get_layer(baseurl, layermd, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
+			
 		
 version = '0.1'
 debug = True

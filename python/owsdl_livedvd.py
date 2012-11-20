@@ -44,8 +44,8 @@ for d in datalist:
 	layername = d[1]
 	print 'Download layer ' + workspacename + ':' + layername
 	layerbaseurl = baseurl + workspacename + '/' + layername + '/'
-	try:
-		gbowsdl.get_workspace(layerbaseurl, outputpath, workspacename, layername, cat=cat)
-	except Exception as e:
-		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
-		pass
+#	try:
+	gbowsdl.get_workspace(layerbaseurl, outputpath, workspacename, layername, cat=cat)
+#	except Exception as e:
+#		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
+#		pass
