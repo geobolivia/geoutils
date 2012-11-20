@@ -78,65 +78,65 @@ def test_update_file(filename, replaceTime):
 #	with open(stylefile, 'w') as f:
 #		f.write(style.sld_body)
 
-def write_shp_data(baseurl,workspacebase,workspacename,layername):
-	if not test_update_file(os.path.join(workspacebase, layername + '.shp'), replaceTime):
-		return
+#def write_shp_data(baseurl,workspacebase,workspacename,layername):
+#	if not test_update_file(os.path.join(workspacebase, layername + '.shp'), replaceTime):
+#		return
 
-	wfsdriver = ogr.GetDriverByName('WFS')
-	shpdriver = ogr.GetDriverByName("ESRI Shapefile")
-	shpdatasource = shpdriver.CreateDataSource(workspacebase)
+#	wfsdriver = ogr.GetDriverByName('WFS')
+#	shpdriver = ogr.GetDriverByName("ESRI Shapefile")
+#	shpdatasource = shpdriver.CreateDataSource(workspacebase)
 
-	replaceshp=True
-	if replaceshp:
-		itodelete=None
-		for i in range(0, shpdatasource.GetLayerCount()):
-			shpl = shpdatasource.GetLayerByIndex(i)
-			if shpl.GetName() == layername:
-				itodelete=i
-		if itodelete is not None:
-			shpdatasource.DeleteLayer(itodelete)
-			shpdatasource.SyncToDisk()
+#	replaceshp=True
+#	if replaceshp:
+#		itodelete=None
+#		for i in range(0, shpdatasource.GetLayerCount()):
+#			shpl = shpdatasource.GetLayerByIndex(i)
+#			if shpl.GetName() == layername:
+#				itodelete=i
+#		if itodelete is not None:
+#			shpdatasource.DeleteLayer(itodelete)
+#			shpdatasource.SyncToDisk()
 
-	layerwfsurl = forge_ows_url(baseurl, 'wfs', workspacename, layername)
-	wfs = wfsdriver.Open("WFS:"+layerwfsurl)
-	wfsl = wfs.GetLayerByName(workspacename+':'+layername)
-	try:
-		shpdatasource.CopyLayer(wfsl, layername)
-		shpdatasource.SyncToDisk()
-	except:
-		raise
+#	layerwfsurl = forge_ows_url(baseurl, 'wfs', workspacename, layername)
+#	wfs = wfsdriver.Open("WFS:"+layerwfsurl)
+#	wfsl = wfs.GetLayerByName(workspacename+':'+layername)
+#	try:
+#		shpdatasource.CopyLayer(wfsl, layername)
+#		shpdatasource.SyncToDisk()
+#	except:
+#		raise
 
-def write_tiff_data(baseurl,workspacebase,workspacename,layername):
-	gtifffilename = os.path.join(workspacebase, layername + '.tiff')
-	if not test_update_file(gtifffilename, replaceTime):
-		return
-
-	# The WCS driver needs a temporary XML file
-	# http://www.gdal.org/frmt_wcs.html
-	serviceURL = forge_ows_url(baseurl, 'wcs', workspacename, layername)
-	coverageName = workspacename+':'+layername
-	tmpxmlfile = '/tmp/gdalwcsdataset.xml'
-	top = Element('WCS_GDAL')
-	child = SubElement(top, 'ServiceURL')
-	child.text = serviceURL
-	child = SubElement(top, 'CoverageName')
-	child.text = coverageName
-	with open(tmpxmlfile, "w") as f:
-		f.write(tostring(top))
-
-	wcsds=gdal.Open(tmpxmlfile)	
-	# http://www.gdal.org/frmt_gtiff.html
-	gtiffdriver = gdal.GetDriverByName("GTiff")
-
-	try:
-		# TODO use a function for showing copy progress
-		gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0)
-		gtiffds = None
-		wcsds = None
-	except:
-		gtiffds = None
-		wcsds = None
-		raise
+#def write_tiff_data(baseurl,workspacebase,workspacename,layername):
+#	gtifffilename = os.path.join(workspacebase, layername + '.tiff')
+#	if not test_update_file(gtifffilename, replaceTime):
+#		return
+#
+#	# The WCS driver needs a temporary XML file
+#	# http://www.gdal.org/frmt_wcs.html
+#	serviceURL = forge_ows_url(baseurl, 'wcs', workspacename, layername)
+#	coverageName = workspacename+':'+layername
+#	tmpxmlfile = '/tmp/gdalwcsdataset.xml'
+#	top = Element('WCS_GDAL')
+#	child = SubElement(top, 'ServiceURL')
+#	child.text = serviceURL
+#	child = SubElement(top, 'CoverageName')
+#	child.text = coverageName
+#	with open(tmpxmlfile, "w") as f:
+#		f.write(tostring(top))
+#
+#	wcsds=gdal.Open(tmpxmlfile)	
+#	# http://www.gdal.org/frmt_gtiff.html
+#	gtiffdriver = gdal.GetDriverByName("GTiff")
+#
+#	try:
+#		# TODO use a function for showing copy progress
+#		gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0)
+#		gtiffds = None
+#		wcsds = None
+#	except:
+#		gtiffds = None
+#		wcsds = None
+#		raise
 
 def forge_ows_url(baseurl, ows='wms', workspacename=None, layername=None):
 	#if not workspacename is None:
@@ -146,7 +146,7 @@ def forge_ows_url(baseurl, ows='wms', workspacename=None, layername=None):
 	baseurl += '/' + ows + '?'
 	return baseurl
 
-def get_layer(ld, baseurl, layermd, filebase, cat, workspacename, layername, workspacepath):
+def get_layer(ld, layermd, filebase, cat, workspacename, layername, workspacepath):
 	# Metadata
 	# TODO - manage various Metadata Urls
 	for m in layermd.metadataUrls:
@@ -169,18 +169,18 @@ def get_layer(ld, baseurl, layermd, filebase, cat, workspacename, layername, wor
 	try:
 		if debug:
 			print '  vectorial data via wfs'
-		write_shp_data(baseurl,workspacepath,workspacename,layername)
+		ld.writeShpData(workspacepath,workspacename,layername)
 	except:
 		# Try WCS
 		try:
 			if debug:
 				print '  error in downloading vector data'
 				print '  try raster data via wcs'
-			write_tiff_data(baseurl,workspacepath,workspacename,layername)
+			ld.writeTiffData(workspacepath,workspacename,layername)
 		except Exception as e:
 			print "    ERROR in downloading raster file:", e
 			pass
-		pass	
+		pass
 
 	print '--Layer downloaded'
 
@@ -188,10 +188,6 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 
 	# Connect to REST GeoServer
         d = Downloader(baseurl, user, pw, workspacename, layername)
-	# Get capabilities for this layer
-	wmsurl = forge_ows_url(baseurl, 'wms', workspacename, layername)
-	wms = WebMapService(wmsurl, version='1.1.1')
-	layers=wms.items()
 
         layers = d.addLayersFromWms()
 
@@ -207,7 +203,7 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 
 		if debug:
 			print '--Get layer ' + ld.workspace + ':' + ld.layer
-		get_layer(ld, baseurl, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
+		get_layer(ld, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
 
 version = '0.1'
 debug = True

@@ -6,7 +6,7 @@ from geoserver.catalog import Catalog
 
 # Input parameters
 import properties
-baseurl = properties.baseurl
+geoserverurl = properties.baseurl
 if properties.user is None:
 	user = raw_input("User: ")
 else:
@@ -41,7 +41,7 @@ for d in datalist:
 	print 'Download layer ' + workspacename + ':' + layername
 	#layerbaseurl = baseurl + workspacename + '/' + layername + '/'
 #	try:
-	gbowsdl.get_workspace(baseurl, outputpath, workspacename, layername, user=user, pw=pw)
+	gbowsdl.get_workspace(geoserverurl, outputpath, workspacename, layername, user=user, pw=pw)
 #	except Exception as e:
 #		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
 #		pass

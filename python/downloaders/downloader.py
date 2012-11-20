@@ -43,6 +43,6 @@ class Downloader:
                 """Create a new layer downloader and add to the list
                 layerMetadata: metadata object (of owslib) of the new layer
                 """
-                ld = LayerDownloader(self.restConnection, layerMetadata)
+                ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl)
                 self.ldList.append(ld)
                 return ld
