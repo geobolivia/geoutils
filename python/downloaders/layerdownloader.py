@@ -162,8 +162,10 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                logging.info('layer "' + self.layerMetadata.id + '" - start downloading')
+                logging.info('layer "' + self.layerMetadata.id + '" - start processing')
                 t1 = datetime.datetime.now()
+
+                someError = False
 
                 if not self.workspace is None:
                         workspacepath = os.path.join(outputPath, self.workspace)
@@ -180,12 +182,14 @@ class LayerDownloader:
                         try:
                                 self.writeMetadata(m['url'],filebase,'.xml')
                         except Exception as e:
-                                logging.error("error while downloading XML metadata file: " + e)
+                                logging.error("error while downloading XML metadata file: " + str(e))
+                                someError = True
                                 pass
                         try:
                                 self.writeMetadata(m['url'],filebase,'.pdf')
                         except Exception as e:
-                                logging.error("error while downloading PDF metadata file: " + e)
+                                logging.error("error while downloading PDF metadata file: " + str(e))
+                                someError = True
                                 pass
 
                 # Style
@@ -196,7 +200,8 @@ class LayerDownloader:
                         try:
                                 self.writeStyle(reststyle,filebase)
                         except Exception as e:
-                                logging.error("error while downloading SLD style file: " + e)
+                                logging.error("error while downloading SLD style file: " + str(e))
+                                someError = True
                                 pass
                 # Data
                 # Try WFS
@@ -209,17 +214,21 @@ class LayerDownloader:
                                 logging.debug('layer "' + self.layerMetadata.id + '" - download raster data from WCS in GeoTIFF format')
                                 self.writeTiffData(workspacepath)
                         except Exception as e:
-                                logging.error("error while downloading raster file: " + e)
+                                logging.error("error while downloading raster file: " + str(e))
+                                someError = True
                                 pass
                         # Todo - test the raster really was downloaded because some error are not raised as exceptions:
                         # ERROR 1: Operation timed out after 30001 milliseconds with 0 bytes received
                         pass
                 except Exception as e:
                         logging.warning('error while downloading vector data: ' + str(e))
+                        someError = True
                         pass
 
                 delta = datetime.datetime.now() - t1
-                logging.info('layer "' + self.layerMetadata.id + '" - succesfully downloaded in ' + str(delta) )
+                logging.info('layer "' + self.layerMetadata.id + '" - processed in ' + str(delta) )
+
+                return someError
 
         def testIfFileExists(self, filename):
                 return os.path.isfile(filename)

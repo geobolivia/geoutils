@@ -82,6 +82,8 @@ class Downloader:
                 logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - starting')
                 t1 = datetime.datetime.now()
                 for ld in self.layerDownloaders:
-                        ld.getLayer(outputPath)
+                        if ld.getLayer(outputPath):
+                                logging.error('Error in layer ' + ld.layerMetadata.id)
+
                 delta = datetime.datetime.now() - t1
                 logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - succesfully done in ' + str(delta))
