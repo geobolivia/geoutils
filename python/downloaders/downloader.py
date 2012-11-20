@@ -73,17 +73,7 @@ class Downloader:
                 self.layerDownloaders[layerMetadata.id] = ld
                 return ld
 
-        def getLayers(self, outputpath):
+        def getLayers(self, outputPath):
                 for layerId in self.layerDownloaders:
                         ld = self.layerDownloaders[layerId]
-                        if not ld.workspace is None:
-                                workspacepath = os.path.join(outputpath,ld.workspace)
-                        else:
-                                workspacepath = outputpath
-                        if not os.access(workspacepath, os.W_OK):
-                                os.mkdir(workspacepath)
-                        filebase = os.path.join(workspacepath,ld.layer)
-
-                        if self.debug:
-                                print '--Get layer ' + ld.layerMetadata.id
-                        ld.getLayer(filebase, workspacepath)
+                        ld.getLayer(outputPath)

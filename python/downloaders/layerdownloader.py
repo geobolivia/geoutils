@@ -149,7 +149,18 @@ class LayerDownloader:
                         wcsds = None
                         raise
 
-        def getLayer(self, filebase, workspacepath):
+        def getLayer(self, outputPath):
+                if self.debug:
+                        print '--Get layer ' + self.layerMetadata.id
+
+                if not self.workspace is None:
+                        workspacepath = os.path.join(outputPath, self.workspace)
+                else:
+                        workspacepath = outputPath
+                if not os.access(workspacepath, os.W_OK):
+                        os.mkdir(workspacepath)
+                filebase = os.path.join(workspacepath, self.layer)
+
                 # Metadata
                 # TODO - manage various Metadata Urls
                 for m in self.layerMetadata.metadataUrls:
