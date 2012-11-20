@@ -52,31 +52,31 @@ def test_update_file(filename, replaceTime):
 
 	return False
 
-def write_metadata(url,filebase,extension):
-	filename = filebase + extension
+#def write_metadata(url,filebase,extension):
+#	filename = filebase + extension
+#
+#	if not test_update_file(filename, replaceTime):
+#		return
+#
+#	# Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
+#	try:
+#		mdtuple=urlparse(url)
+#		xmlpath=urljoin(mdtuple.path,'iso19139' + extension)
+#		xmltuple=[mdtuple.scheme, mdtuple.netloc, xmlpath, mdtuple.params, mdtuple.query, mdtuple.fragment]
+#		xmlurl=urlunparse(xmltuple)
+#		urlretrieve(xmlurl, filename)
+#	except:
+#		pass
 
-	if not test_update_file(filename, replaceTime):
-		return
-
-	# Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
-	try:
-		mdtuple=urlparse(url)
-		xmlpath=urljoin(mdtuple.path,'iso19139' + extension)
-		xmltuple=[mdtuple.scheme, mdtuple.netloc, xmlpath, mdtuple.params, mdtuple.query, mdtuple.fragment]
-		xmlurl=urlunparse(xmltuple)
-		urlretrieve(xmlurl, filename)
-	except:
-		pass
-
-def write_sld_style(style,filebase):
-	# TODO: wrap SLD in human-readable style
-	stylefile=filebase+'.sld'
-
-	if not test_update_file(stylefile, replaceTime):
-		return
-
-	with open(stylefile, 'w') as f:
-		f.write(style.sld_body)
+#def write_sld_style(style,filebase):
+#	# TODO: wrap SLD in human-readable style
+#	stylefile=filebase+'.sld'
+#
+#	if not test_update_file(stylefile, replaceTime):
+#		return
+#
+#	with open(stylefile, 'w') as f:
+#		f.write(style.sld_body)
 
 def write_shp_data(baseurl,workspacebase,workspacename,layername):
 	if not test_update_file(os.path.join(workspacebase, layername + '.shp'), replaceTime):
@@ -146,14 +146,14 @@ def forge_ows_url(baseurl, ows='wms', workspacename=None, layername=None):
 	baseurl += '/' + ows + '?'
 	return baseurl
 
-def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspacepath):
+def get_layer(ld, baseurl, layermd, filebase, cat, workspacename, layername, workspacepath):
 	# Metadata
 	# TODO - manage various Metadata Urls
 	for m in layermd.metadataUrls:
 		if debug:
 			print '  xml and pdf metadata'
-		write_metadata(m['url'],filebase,'.xml')
-		write_metadata(m['url'],filebase,'.pdf')
+		ld.writeMetadata(m['url'],filebase,'.xml')
+		ld.writeMetadata(m['url'],filebase,'.pdf')
 
 	# Style
 	# TODO - manage various Metadata styles
@@ -161,7 +161,7 @@ def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspa
 		if debug:
 			print '  sld style'
 		reststyle = cat.get_style(s)
-		write_sld_style(reststyle,filebase)
+		ld.writeStyle(reststyle,filebase)
 
 	# Data
 	# TODO: download raster layers
@@ -188,7 +188,6 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 
 	# Connect to REST GeoServer
         d = Downloader(baseurl, user, pw, workspacename, layername)
-
 	# Get capabilities for this layer
 	wmsurl = forge_ows_url(baseurl, 'wms', workspacename, layername)
 	wms = WebMapService(wmsurl, version='1.1.1')
@@ -208,7 +207,7 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 
 		if debug:
 			print '--Get layer ' + ld.workspace + ':' + ld.layer
-		get_layer(baseurl, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
+		get_layer(ld, baseurl, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
 
 version = '0.1'
 debug = True

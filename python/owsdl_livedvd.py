@@ -19,10 +19,6 @@ csvfilename = properties.csvfilename
 outputpath = properties.outputpath
 firstdata = properties.firstdata
 
-resturl=baseurl+'rest'
-stylesurl=resturl+'/styles/'
-cat = Catalog(resturl, username=user, password=pw)
-
 # Read CSV file
 def read_csv(csvfilename):
 	datalist = []
@@ -45,7 +41,7 @@ for d in datalist:
 	print 'Download layer ' + workspacename + ':' + layername
 	#layerbaseurl = baseurl + workspacename + '/' + layername + '/'
 #	try:
-	gbowsdl.get_workspace(baseurl, outputpath, workspacename, layername, cat=cat)
+	gbowsdl.get_workspace(baseurl, outputpath, workspacename, layername, user=user, pw=pw)
 #	except Exception as e:
 #		print "  ERROR downloading data for layer " + workspacename + ':' + layername + ": ", e
 #		pass
