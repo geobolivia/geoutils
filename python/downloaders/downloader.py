@@ -3,13 +3,15 @@ from downloaders.layerdownloader import LayerDownloader
 from owslib.wms import WebMapService
 
 import csv
+import logging
 import os
+import time
 
 class Downloader:
 	"""
 	Class for downloading and managing a repository of GeoBolivia data.
 	"""
-	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None, debug=None):
+	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None):
                 """
                 Constructor.
                 layerDownloaders: a dictionary of LayerDownloader objects (key: layerId)
@@ -18,10 +20,6 @@ class Downloader:
                 self.layerDownloaders = []
                 self.geoserverUrl = geoserverUrl
                 self.restConnection = LayerDownloader.connectToRest(geoserverUrl + '/rest/', username=username, password=password)
-                self.debug = debug
-                if debug is None:
-                        debug = False
-                self.warning = True
 
         def forgeOwsUrl(self, ows='wms'):
                 baseUrl = self.geoserverUrl
@@ -53,24 +51,21 @@ class Downloader:
                 # Convert the list in dictionary for manipulation comodity
                 tmpLayerDownloaders = {ld.layerMetadata.id: ld for ld in self.layerDownloaders}
                 lenDiff = len(self.layerDownloaders) - len(tmpLayerDownloaders)
-                if lenDiff > 0 and self.warning:
-                        print 'WARNING ' + str(lenDiff) + ' duplicated layers (same identifier as another) have been deleted'
+                if lenDiff > 0:
+                        logging.warning(str(lenDiff) + ' duplicated layers (same identifier as another) have been deleted')
                         # TODO - in DEBUG mode, list the duplicated layers that have been deleted
 
                 # Filter existing layerDownloaders
                 unwanted = set(tmpLayerDownloaders) - set(layersFilter)
                 for unwanted_key in unwanted:
-                        if self.debug:
-                                print 'DEBUG the following layer will not be downloaded', unwanted_key
+                        logging.debug('the layer will not be downloaded: ' + unwanted_key)
                         del tmpLayerDownloaders[unwanted_key]
-                if self.warning:
-                        print 'WARNING ' + str(len(unwanted)) + ' layers have been filtered and will not be downloaded'
+                logging.warning(str(len(unwanted)) + ' layers have been filtered and will not be downloaded')
 
                 # Delete unknown layers in filter
                 notfound = set(layersFilter) - set(tmpLayerDownloaders)
                 layersFilter = [l for l in layersFilter if not l in notfound]
-                if self.warning:
-                        print 'WARNING ' + str(len(notfound)) + ' layers were not found', ', '.join(notfound)
+                logging.warning(str(len(notfound)) + ' layers were not found: ' + ', '.join(notfound))
 
                 # Order the layerDownloaders, converting into list
                 self.layerDownloaders = [tmpLayerDownloaders[key] for key in layersFilter]
@@ -79,10 +74,14 @@ class Downloader:
                 """Create a new layer downloader and add to the list
                 layerMetadata: metadata object (of owslib) of the new layer
                 """
-                ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl, debug=self.debug)
+                ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl)
                 self.layerDownloaders.append(ld)
                 return ld
 
         def getLayers(self, outputPath):
+                logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - starting')
+                t1 = time.time()
                 for ld in self.layerDownloaders:
                         ld.getLayer(outputPath)
+                delta = time.time() - t1
+                logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - succesfully done in ' + "%.2g" % delta +  's')

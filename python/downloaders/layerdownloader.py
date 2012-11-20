@@ -13,6 +13,10 @@ from urlparse import urljoin
 from urllib import urlretrieve
 from xml.etree.ElementTree import Element, SubElement, tostring
 
+import logging
+
+logging.basicConfig(format='%(asctime)s %(levelname)s\t%(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO)
+
 # Libraries
 # ogr: WFS, SHP
 #  http://www.gdal.org/ogr/drv_wfs.html
@@ -23,7 +27,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 #  http://dwins.github.com/gsconfig.py/
 
 class LayerDownloader:
-	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', replaceTime=None, debug=None):
+	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', replaceTime=None):
                 self.layerMetadata = layerMetadata
                 if layerMetadata is None:
                         self.workspace = None
@@ -38,7 +42,8 @@ class LayerDownloader:
                                 self.workspace = None
                                 self.layer = tmp[0]
                         else:
-                                print 'ERROR - the layerId is incorrect (more than one ":" characters)', layerMetadata.id
+                                logging.error('the layerId is incorrect (more than one ":" characters): ' + layerMetadata.id)
+                                # TODO raise an exception
 
                 self.geoserverUrl = geoserverUrl
 
@@ -49,9 +54,6 @@ class LayerDownloader:
                 self.replaceTime = replaceTime
                 if replaceTime is None:
                         replaceTime = 60 * 60 * 24
-                self.debug = debug
-                if debug is None:
-                        self.debug = True
 
 	def connectToRest(restUrl=None, username=None, password=None):
                 """
@@ -150,8 +152,8 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                if self.debug:
-                        print '--Get layer ' + self.layerMetadata.id
+                logging.info('layer "' + self.layerMetadata.id + '" - begin download')
+                t1 = time.time()
 
                 if not self.workspace is None:
                         workspacepath = os.path.join(outputPath, self.workspace)
@@ -164,16 +166,14 @@ class LayerDownloader:
                 # Metadata
                 # TODO - manage various Metadata Urls
                 for m in self.layerMetadata.metadataUrls:
-                        if self.debug:
-                                print '  xml and pdf metadata'
+                        logging.debug('layer "' + self.layerMetadata.id + '" - download metadata in xml and pdf formats')
                         self.writeMetadata(m['url'],filebase,'.xml')
                         self.writeMetadata(m['url'],filebase,'.pdf')
 
                 # Style
                 # TODO - manage various Metadata styles
                 for s in self.layerMetadata.styles.keys():
-                        if self.debug:
-                                print '  sld style'
+                        logging.debug('layer "' + self.layerMetadata.id + '" - download style in SLD format')
                         reststyle = self.restConnection.get_style(s)
                         self.writeStyle(reststyle,filebase)
 
@@ -181,21 +181,20 @@ class LayerDownloader:
                 # TODO: download raster layers
                 # Try WFS
                 try:
-                        if self.debug:
-                                print '  vectorial data via wfs'
+                        logging.debug('layer "' + self.layerMetadata.id + '" - download vectorial data from WMS in SHP format')
                         self.writeShpData(workspacepath)
                 except:
                         # Try WCS
                         try:
-                                if self.debug:
-                                        print '  error in downloading vector data'
-                                        print '  try raster data via wcs'
+                                logging.warning('error in downloading vector data')
+                                logging.debug('layer "' + self.layerMetadata.id + '" - download raster data from WCS in GeoTIFF format')
                                 self.writeTiffData(workspacepath)
                         except Exception as e:
-                                print "    ERROR in downloading raster file:", e
+                                logging.error("error in downloading raster file: " + e)
                                 pass
                         pass
-                print '--Layer downloaded'
+                delta = time.time() - t1
+                logging.info('layer "' + self.layerMetadata.id + '" - succesfully downloaded in ' + "%.2g" % delta +  's')
 
         def test_update_file(filename, replaceTime):
                 now = time.time()
@@ -206,8 +205,7 @@ class LayerDownloader:
                         pass
                         return True
 
-                if debug:
-                        print '    the file exists and is new - download aborted'
+                logging.info('    the file exists and is new - download aborted')
 
                 if modification_time < too_old:
                         return True
