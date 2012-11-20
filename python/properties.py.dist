@@ -1,6 +1,7 @@
 # Input arguments
-baseurl='http://www.geo.gob.bo/geoserver/'
-outputpath='/tmp/'
+geoserverUrl='http://www.geo.gob.bo/geoserver/'
+outputPath='/tmp/'
 user = None
 pw = None
-csvfilename = 'prioridad_test.csv'
+csvFilename = 'prioridad_test.csv'
+firstLayerFilter = None
