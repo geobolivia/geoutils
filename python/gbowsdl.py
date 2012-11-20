@@ -187,21 +187,19 @@ def get_layer(baseurl, layermd, filebase, cat, workspacename, layername, workspa
 def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
 
 	# Connect to REST GeoServer
-        d = Downloader(baseurl, user, pw)
+        d = Downloader(baseurl, user, pw, workspacename, layername)
 
 	# Get capabilities for this layer
 	wmsurl = forge_ows_url(baseurl, 'wms', workspacename, layername)
 	wms = WebMapService(wmsurl, version='1.1.1')
 	layers=wms.items()
 
+        layers = d.addLayersFromWms()
+
 	if len(layers) == 0:
 		print '  ERROR: layer not found on WMS server ' + workspacename + ':' + layername
 
-	for l in layers:
-
-                layerId= l[0]
-		ld = d.addLayerDownloader(layerId)
-                layermd = l[1]
+	for ld in layers:
 
 		workspacepath = os.path.join(outputpath,ld.workspace)
 		if not os.access(workspacepath, os.W_OK):
@@ -210,9 +208,8 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 
 		if debug:
 			print '--Get layer ' + ld.workspace + ':' + ld.layer
-		get_layer(baseurl, layermd, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
-			
-		
+		get_layer(baseurl, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
+
 version = '0.1'
 debug = True
 replaceTime = 24000

@@ -1,9 +1,20 @@
 from geoserver.catalog import Catalog
 
+from re import compile
+from re import split
+
 class LayerDownloader:
-	def __init__(self, workspace=None, layer=None, restConnection=None):
-		self.workspace = workspace
-		self.layer = layer
+	def __init__(self, restConnection=None, layerMetadata=None):
+                self.layerMetadata = layerMetadata
+                if layerMetadata is None:
+                        self.workspace = None
+                        self.layer = None
+                else:
+                        regexp = compile(":")
+                        tmp = regexp.split(layerMetadata.id)
+                        self.workspace = tmp[0]
+                        self.layer = tmp[1]
+
                 if restConnection is None:
                         self.restConnection = connectToRest()
 
