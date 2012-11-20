@@ -5,7 +5,7 @@ from owslib.wms import WebMapService
 import csv
 import logging
 import os
-import time
+import datetime
 
 class Downloader:
 	"""
@@ -80,8 +80,8 @@ class Downloader:
 
         def getLayers(self, outputPath):
                 logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - starting')
-                t1 = time.time()
+                t1 = datetime.datetime.now()
                 for ld in self.layerDownloaders:
                         ld.getLayer(outputPath)
-                delta = time.time() - t1
-                logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - succesfully done in ' + "%.2g" % delta +  's')
+                delta = datetime.datetime.now() - t1
+                logging.info('Download ' + str(len(self.layerDownloaders)) + ' layers - succesfully done in ' + str(delta))

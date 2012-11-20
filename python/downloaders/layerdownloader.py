@@ -5,7 +5,7 @@ from osgeo import gdal
 
 from re import compile
 from re import split
-import time
+import datetime
 import os
 from urlparse import urlparse
 from urlparse import urlunparse
@@ -152,8 +152,8 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                logging.info('layer "' + self.layerMetadata.id + '" - begin download')
-                t1 = time.time()
+                logging.info('layer "' + self.layerMetadata.id + '" - start downloading')
+                t1 = datetime.datetime.now()
 
                 if not self.workspace is None:
                         workspacepath = os.path.join(outputPath, self.workspace)
@@ -178,23 +178,27 @@ class LayerDownloader:
                         self.writeStyle(reststyle,filebase)
 
                 # Data
-                # TODO: download raster layers
                 # Try WFS
                 try:
                         logging.debug('layer "' + self.layerMetadata.id + '" - download vectorial data from WMS in SHP format')
                         self.writeShpData(workspacepath)
-                except:
-                        # Try WCS
+                except ValueError:
+                        # There was no WFS layer with this identifier - try WCS
                         try:
-                                logging.warning('error in downloading vector data')
                                 logging.debug('layer "' + self.layerMetadata.id + '" - download raster data from WCS in GeoTIFF format')
                                 self.writeTiffData(workspacepath)
                         except Exception as e:
                                 logging.error("error in downloading raster file: " + e)
                                 pass
+                        # Todo - test the raster really was downloaded because some error are not raised as exceptions:
+                        # ERROR 1: Operation timed out after 30001 milliseconds with 0 bytes received
                         pass
-                delta = time.time() - t1
-                logging.info('layer "' + self.layerMetadata.id + '" - succesfully downloaded in ' + "%.2g" % delta +  's')
+                except Exception as e:
+                        logging.warning('error in downloading vector data: ' + e)
+                        pass
+
+                delta = datetime.datetime.now() - t1
+                logging.info('layer "' + self.layerMetadata.id + '" - succesfully downloaded in ' + str(delta) )
 
         def test_update_file(filename, replaceTime):
                 now = time.time()
