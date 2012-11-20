@@ -85,7 +85,8 @@ class LayerDownloader:
                         xmlurl=urlunparse(xmltuple)
                         urlretrieve(xmlurl, filename)
                 except:
-                        pass
+                        logging.error('The metadata file "' + filename + '" could not be downloaded. URL: ' + xmlpath)
+                        raise
 
         def writeStyle(self, style, filebase):
                 # TODO: wrap SLD in human-readable style
@@ -176,16 +177,27 @@ class LayerDownloader:
                 # TODO - manage various Metadata Urls
                 for m in self.layerMetadata.metadataUrls:
                         logging.debug('layer "' + self.layerMetadata.id + '" - download metadata in xml and pdf formats')
-                        self.writeMetadata(m['url'],filebase,'.xml')
-                        self.writeMetadata(m['url'],filebase,'.pdf')
+                        try:
+                                self.writeMetadata(m['url'],filebase,'.xml')
+                        except Exception as e:
+                                logging.error("error while downloading XML metadata file: " + e)
+                                pass
+                        try:
+                                self.writeMetadata(m['url'],filebase,'.pdf')
+                        except Exception as e:
+                                logging.error("error while downloading PDF metadata file: " + e)
+                                pass
 
                 # Style
                 # TODO - manage various Metadata styles
                 for s in self.layerMetadata.styles.keys():
                         logging.debug('layer "' + self.layerMetadata.id + '" - download style in SLD format')
                         reststyle = self.restConnection.get_style(s)
-                        self.writeStyle(reststyle,filebase)
-
+                        try:
+                                self.writeStyle(reststyle,filebase)
+                        except Exception as e:
+                                logging.error("error while downloading SLD style file: " + e)
+                                pass
                 # Data
                 # Try WFS
                 try:
@@ -197,13 +209,13 @@ class LayerDownloader:
                                 logging.debug('layer "' + self.layerMetadata.id + '" - download raster data from WCS in GeoTIFF format')
                                 self.writeTiffData(workspacepath)
                         except Exception as e:
-                                logging.error("error in downloading raster file: " + e)
+                                logging.error("error while downloading raster file: " + e)
                                 pass
                         # Todo - test the raster really was downloaded because some error are not raised as exceptions:
                         # ERROR 1: Operation timed out after 30001 milliseconds with 0 bytes received
                         pass
                 except Exception as e:
-                        logging.warning('error in downloading vector data: ' + str(e))
+                        logging.warning('error while downloading vector data: ' + str(e))
                         pass
 
                 delta = datetime.datetime.now() - t1
