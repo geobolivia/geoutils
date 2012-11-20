@@ -6,6 +6,7 @@ from osgeo import gdal
 from re import compile
 from re import split
 import datetime
+import time
 import os
 from urlparse import urlparse
 from urlparse import urlunparse
@@ -27,7 +28,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s\t%(message)s', datefmt='%d
 #  http://dwins.github.com/gsconfig.py/
 
 class LayerDownloader:
-	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', replaceTime=None):
+	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', cacheTimeout=60*60*24, forceOverwrite=False):
                 self.layerMetadata = layerMetadata
                 if layerMetadata is None:
                         self.workspace = None
@@ -51,9 +52,8 @@ class LayerDownloader:
                 if restConnection is None:
                         self.restConnection = connectToRest()
 
-                self.replaceTime = replaceTime
-                if replaceTime is None:
-                        replaceTime = 60 * 60 * 24
+                self.cacheTimeout = cacheTimeout
+                self.forceOverwrite = forceOverwrite
 
 	def connectToRest(restUrl=None, username=None, password=None):
                 """
@@ -74,6 +74,8 @@ class LayerDownloader:
 
         def writeMetadata(self, url, filebase, extension):
                 filename = filebase + extension
+                if not self.testIfOverwriteFile(filename):
+                       return
 
                 # Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
                 try:
@@ -87,28 +89,31 @@ class LayerDownloader:
 
         def writeStyle(self, style, filebase):
                 # TODO: wrap SLD in human-readable style
-                stylefile = filebase + '.sld'
-                with open(stylefile, 'w') as f:
+                filename = filebase + '.sld'
+                if not self.testIfOverwriteFile(filename):
+                       return
+
+                with open(filename, 'w') as f:
                         f.write(style.sld_body)
 
         def writeShpData(self, workspacebase):
-#                if not test_update_file(os.path.join(workspacebase, layername + '.shp'), replaceTime):
-#                        return
+                # TODO verify all the files, not only the SHP
+                filename = os.path.join(workspacebase, self.layer + '.shp')
+                if not self.testIfOverwriteFile(filename):
+                        return
 
                 wfsdriver = ogr.GetDriverByName('WFS')
                 shpdriver = ogr.GetDriverByName("ESRI Shapefile")
                 shpdatasource = shpdriver.CreateDataSource(workspacebase)
 
-                replaceshp=True
-                if replaceshp:
-                        itodelete=None
-                        for i in range(0, shpdatasource.GetLayerCount()):
-                                shpl = shpdatasource.GetLayerByIndex(i)
-                                if shpl.GetName() == self.layer:
-                                        itodelete=i
-                        if itodelete is not None:
-                                shpdatasource.DeleteLayer(itodelete)
-                                shpdatasource.SyncToDisk()
+                iToDelete=None
+                for i in range(0, shpdatasource.GetLayerCount()):
+                        shpl = shpdatasource.GetLayerByIndex(i)
+                        if shpl.GetName() == self.layer:
+                                iToDelete=i
+                if iToDelete is not None:
+                        shpdatasource.DeleteLayer(iToDelete)
+                        shpdatasource.SyncToDisk()
 
                 layerwfsurl = self.forgeOwsUrl('wfs')
                 wfs = wfsdriver.Open("WFS:"+layerwfsurl)
@@ -120,10 +125,11 @@ class LayerDownloader:
                         raise
 
         def writeTiffData(self, workspacebase):
+                # Default timeout for WCS GDAL driver is 30s
                 timeout = '120'
                 gtifffilename = os.path.join(workspacebase, self.layer + '.tiff')
-                #if not test_update_file(gtifffilename, replaceTime):
-                #    return
+                if not self.testIfOverwriteFile(gtifffilename):
+                        return
 
                 # The WCS driver needs a temporary XML file
                 # http://www.gdal.org/frmt_wcs.html
@@ -197,24 +203,71 @@ class LayerDownloader:
                         # ERROR 1: Operation timed out after 30001 milliseconds with 0 bytes received
                         pass
                 except Exception as e:
-                        logging.warning('error in downloading vector data: ' + e)
+                        logging.warning('error in downloading vector data: ' + str(e))
                         pass
 
                 delta = datetime.datetime.now() - t1
                 logging.info('layer "' + self.layerMetadata.id + '" - succesfully downloaded in ' + str(delta) )
 
-        def test_update_file(filename, replaceTime):
-                now = time.time()
-                too_old = now - replaceTime
+        def testIfFileExists(self, filename):
+                return os.path.isfile(filename)
+
+        def testIfFileIsValid(self, filename):
+                # Check if the size is superior to 100 Bytes
+                statinfo = os.stat(filename)
+                if statinfo.st_size <= 100:
+                        return False
+
+                return True
+
+        def testIfFileCacheIsStillValid(self, filename):
                 try:
-                        modification_time = os.path.getctime(filename)
+                        modificationTime = os.path.getctime(filename)
+                        expirationTime = modificationTime + self.cacheTimeout
+                        now = time.time()
+                        if expirationTime < now:
+                                logging.debug('Expiration of file cache was ' + str(expirationTime))
+                                return False
+                        else:
+                                logging.debug('Expiration of file cache is ' + str(expirationTime))
+                                return True
                 except OSError:
+                        logging.warning('Unable to find "' + filename + '" file')
                         pass
-                        return True
-
-                logging.info('    the file exists and is new - download aborted')
-
-                if modification_time < too_old:
-                        return True
-
                 return False
+
+        def testIfOverwriteFile(self, filename):
+                # Check if file exists
+                try:
+                        if not self.testIfFileExists(filename):
+                                logging.debug('File "' + filename + '" does not exist. Overwrite file.')
+                                return True
+                except:
+                        logging.warning('Error while checking file existence. Overwrite file.')
+                        return True
+
+                # File exists - check if it is valid
+                try:
+                        if not self.testIfFileIsValid(filename):
+                                logging.debug('File "' + filename + '" is no valid. Overwrite file.')
+                                return True
+                except:
+                        logging.warning('Error while validating file. Overwrite file')
+                        return True
+
+                # File is valid - check if its cache is still valid
+                try:
+                        if not self.testIfFileCacheIsStillValid(filename):
+                                logging.debug('File "' + filename + '" is too old. Overwrite file.')
+                                return True
+                except:
+                        logging.warning('Error while checking cache expiration time. Overwrite file')
+                        return True
+
+                # File cache is still valid - force overwriting ?
+                if self.forceOverwrite:
+                        logging.debug('Force overwrite file.')
+                        return True
+                else:
+                        logging.info('The file exists and will not be updated. ' + filename)
+                        return False
