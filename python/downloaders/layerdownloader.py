@@ -120,6 +120,7 @@ class LayerDownloader:
                         raise
 
         def writeTiffData(self, workspacebase):
+                timeout = '120'
                 gtifffilename = os.path.join(workspacebase, self.layer + '.tiff')
                 #if not test_update_file(gtifffilename, replaceTime):
                 #    return
@@ -134,6 +135,8 @@ class LayerDownloader:
                 child.text = serviceURL
                 child = SubElement(top, 'CoverageName')
                 child.text = coverageName
+                child = SubElement(top, 'Timeout')
+                child.text = str(timeout)
                 with open(tmpxmlfile, "w") as f:
                         f.write(tostring(top))
 
