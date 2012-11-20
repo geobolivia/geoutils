@@ -162,7 +162,7 @@ class LayerDownloader:
                         raise
 
         def getLayer(self, outputPath):
-                logging.info('layer "' + self.layerMetadata.id + '" - starting')
+                logging.debug('layer "' + self.layerMetadata.id + '" - starting')
                 t1 = datetime.datetime.now()
 
                 someError = False
@@ -196,8 +196,8 @@ class LayerDownloader:
                 # TODO - manage various Metadata styles
                 for s in self.layerMetadata.styles.keys():
                         logging.debug('layer "' + self.layerMetadata.id + '" - download style in SLD format')
-                        reststyle = self.restConnection.get_style(s)
                         try:
+                                reststyle = self.restConnection.get_style(s)
                                 self.writeStyle(reststyle,filebase)
                         except Exception as e:
                                 logging.error("error while downloading SLD style file: " + str(e))
