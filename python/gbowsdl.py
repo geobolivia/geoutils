@@ -138,43 +138,43 @@ def test_update_file(filename, replaceTime):
 #		wcsds = None
 #		raise
 
-def get_layer(ld, layermd, filebase, cat, workspacename, layername, workspacepath):
-	# Metadata
-	# TODO - manage various Metadata Urls
-	for m in layermd.metadataUrls:
-		if debug:
-			print '  xml and pdf metadata'
-		ld.writeMetadata(m['url'],filebase,'.xml')
-		ld.writeMetadata(m['url'],filebase,'.pdf')
-
-	# Style
-	# TODO - manage various Metadata styles
-	for s in layermd.styles.keys():
-		if debug:
-			print '  sld style'
-		reststyle = cat.get_style(s)
-		ld.writeStyle(reststyle,filebase)
-
-	# Data
-	# TODO: download raster layers
-	# Try WFS
-	try:
-		if debug:
-			print '  vectorial data via wfs'
-		ld.writeShpData(workspacepath,workspacename,layername)
-	except:
-		# Try WCS
-		try:
-			if debug:
-				print '  error in downloading vector data'
-				print '  try raster data via wcs'
-			ld.writeTiffData(workspacepath,workspacename,layername)
-		except Exception as e:
-			print "    ERROR in downloading raster file:", e
-			pass
-		pass
-
-	print '--Layer downloaded'
+#def get_layer(ld, layermd, filebase, cat, workspacename, layername, workspacepath):
+#	# Metadata
+#	# TODO - manage various Metadata Urls
+#	for m in layermd.metadataUrls:
+#		if debug:
+#			print '  xml and pdf metadata'
+#		ld.writeMetadata(m['url'],filebase,'.xml')
+#		ld.writeMetadata(m['url'],filebase,'.pdf')
+#
+#	# Style
+#	# TODO - manage various Metadata styles
+#	for s in layermd.styles.keys():
+#		if debug:
+#			print '  sld style'
+#		reststyle = cat.get_style(s)
+#		ld.writeStyle(reststyle,filebase)
+#
+#	# Data
+#	# TODO: download raster layers
+#	# Try WFS
+#	try:
+#		if debug:
+#			print '  vectorial data via wfs'
+#		ld.writeShpData(workspacepath,workspacename,layername)
+#	except:
+#		# Try WCS
+#		try:
+#			if debug:
+#				print '  error in downloading vector data'
+#				print '  try raster data via wcs'
+#			ld.writeTiffData(workspacepath,workspacename,layername)
+#		except Exception as e:
+#			print "    ERROR in downloading raster file:", e
+#			pass
+#		pass
+#
+#	print '--Layer downloaded'
 
 def get_workspace(baseurl, outputpath, workspacename = None, layername = None, user = None, pw = None, cat = None):
 
@@ -194,8 +194,8 @@ def get_workspace(baseurl, outputpath, workspacename = None, layername = None, u
 		filebase = os.path.join(workspacepath,ld.layer)
 
 		if debug:
-			print '--Get layer ' + ld.workspace + ':' + ld.layer
-		get_layer(ld, ld.layerMetadata, filebase, d.restConnection, ld.workspace, ld.layer, workspacepath)
+			print '--Get layer ' + ld.layerMetadata.id
+		ld.getLayer(filebase, workspacepath)
 
 version = '0.1'
 debug = True

@@ -31,7 +31,6 @@ class Downloader:
                 """Add new LayerDownloaders from the result of a WMS GetCapabilities
                 """
                 wmsUrl = self.forgeOwsUrl('wms')
-                print wmsUrl
                 wms = WebMapService(wmsUrl, version='1.1.1')
                 layers = wms.items()
                 for l in layers:
