@@ -5,3 +5,5 @@ user = None
 pw = None
 csvFilename = 'prioridad_test.csv'
 firstLayerFilter = None
+forceOverwrite = False
+cacheTimeout = 7 * 24 * 60 * 60

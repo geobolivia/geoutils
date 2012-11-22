@@ -11,7 +11,7 @@ class Downloader:
 	"""
 	Class for downloading and managing a repository of GeoBolivia data.
 	"""
-	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None):
+	def __init__(self, geoserverUrl='http://www.geo.gob.bo/geoserver/', username=None, password=None, cacheTimeout=None, forceOverwrite=None):
                 """
                 Constructor.
                 layerDownloaders: a dictionary of LayerDownloader objects (key: layerId)
@@ -20,6 +20,8 @@ class Downloader:
                 self.layerDownloaders = []
                 self.geoserverUrl = geoserverUrl
                 self.restConnection = LayerDownloader.connectToRest(geoserverUrl + '/rest/', username=username, password=password)
+                self.cacheTimeout = cacheTimeout
+                self.forceOverwrite = forceOverwrite
 
         def forgeOwsUrl(self, ows='wms'):
                 baseUrl = self.geoserverUrl
@@ -74,7 +76,7 @@ class Downloader:
                 """Create a new layer downloader and add to the list
                 layerMetadata: metadata object (of owslib) of the new layer
                 """
-                ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl)
+                ld = LayerDownloader(self.restConnection, layerMetadata, self.geoserverUrl, self.cacheTimeout, self.forceOverwrite)
                 self.layerDownloaders.append(ld)
                 return ld
 

@@ -16,8 +16,10 @@ else:
 csvFilename = properties.csvFilename
 outputPath = properties.outputPath
 firstLayerFilter = properties.firstLayerFilter
+cacheTimeout = properties.cacheTimeout
+forceOverwrite = properties.forceOverwrite
 
-d = Downloader(geoserverUrl, user, pw)
+d = Downloader(geoserverUrl, user, pw, cacheTimeout, forceOverwrite)
 d.addLayersFromWms()
 d.filterAndOrderLayersFromCsv(csvFilename, firstLayerFilter)
 d.getLayers(outputPath)
