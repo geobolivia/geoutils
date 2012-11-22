@@ -158,6 +158,7 @@ class LayerDownloader:
                         try:
                                 gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0, ['TILED=YES', 'COMPRESS=JPEG'])
                         except:
+                                logging.info('Error compressing as JPEG - trying DEFLATE')
                                 gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0, ['TILED=YES', 'COMPRESS=DEFLATE'])
                         gtiffds = None
                         wcsds = None
