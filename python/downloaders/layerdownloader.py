@@ -74,10 +74,13 @@ class LayerDownloader:
                 baseUrl += '/' + ows + '?'
                 return baseUrl
 
-        def writeMetadata(self, url, filebase, extension):
+        def writeMetadata(self, url, filebase, extension, onlyCheck=False):
                 filename = filebase + extension
+                if onlyCheck:
+                        self.checkFile(filename)
+                        return
                 if not self.testIfOverwriteFile(filename):
-                       return
+                        return
 
                 # Code specific to GeoBolivia way to fill the MetadataUrl fields in GeoServer
                 try:
@@ -90,18 +93,24 @@ class LayerDownloader:
                         logging.error('The metadata file "' + filename + '" could not be downloaded. URL: ' + xmlpath)
                         raise
 
-        def writeStyle(self, style, filebase):
+        def writeStyle(self, style, filebase, onlyCheck=False):
                 # TODO: wrap SLD in human-readable style
                 filename = filebase + '.sld'
+                if onlyCheck:
+                        self.checkFile(filename)
+                        return
                 if not self.testIfOverwriteFile(filename):
                        return
 
                 with open(filename, 'w') as f:
                         f.write(style.sld_body)
 
-        def writeShpData(self, workspacebase):
+        def writeShpData(self, workspacebase, onlyCheck=False):
                 # TODO verify all the files, not only the SHP
                 filename = os.path.join(workspacebase, self.layer + '.shp')
+                if onlyCheck:
+                        self.checkFile(filename)
+                        return
                 if not self.testIfOverwriteFile(filename):
                         return
 
@@ -127,10 +136,13 @@ class LayerDownloader:
                 except:
                         raise
 
-        def writeTiffData(self, workspacebase):
+        def writeTiffData(self, workspacebase, onlyCheck=False):
                 # Default timeout for WCS GDAL driver is 30s
                 timeout = '120'
                 gtifffilename = os.path.join(workspacebase, self.layer + '.tiff')
+                if onlyCheck:
+                        self.checkFile(filename)
+                        return
                 if not self.testIfOverwriteFile(gtifffilename):
                         return
 
@@ -167,7 +179,11 @@ class LayerDownloader:
                         wcsds = None
                         raise
 
-        def getLayer(self, outputPath):
+        def checkLayer(self, outputPath):
+                self.getLayer(outputPath, True)
+
+        def getLayer(self, outputPath, onlyCheck=False):
+
                 logging.info('layer "' + self.layerMetadata.id + '" - starting')
                 t1 = datetime.datetime.now()
 
@@ -186,13 +202,13 @@ class LayerDownloader:
                 for m in self.layerMetadata.metadataUrls:
                         logging.debug('layer "' + self.layerMetadata.id + '" - download metadata in xml and pdf formats')
                         try:
-                                self.writeMetadata(m['url'],filebase,'.xml')
+                                self.writeMetadata(m['url'],filebase,'.xml', onlyCheck)
                         except Exception as e:
                                 logging.error("error while downloading XML metadata file: " + str(e))
                                 someError = True
                                 pass
                         try:
-                                self.writeMetadata(m['url'],filebase,'.pdf')
+                                self.writeMetadata(m['url'],filebase,'.pdf', onlyCheck)
                         except Exception as e:
                                 logging.error("error while downloading PDF metadata file: " + str(e))
                                 someError = True
@@ -204,7 +220,7 @@ class LayerDownloader:
                         logging.debug('layer "' + self.layerMetadata.id + '" - download style in SLD format')
                         try:
                                 reststyle = self.restConnection.get_style(s)
-                                self.writeStyle(reststyle,filebase)
+                                self.writeStyle(reststyle,filebase, onlyCheck)
                         except Exception as e:
                                 logging.error("error while downloading SLD style file: " + str(e))
                                 someError = True
@@ -213,18 +229,17 @@ class LayerDownloader:
                 # Try WFS
                 try:
                         logging.debug('layer "' + self.layerMetadata.id + '" - download vectorial data from WMS in SHP format')
-                        self.writeShpData(workspacepath)
+                        self.writeShpData(workspacepath, onlyCheck)
                 except ValueError:
+                        # TODO find another way to detect WFS or WCS (in particular, checkLayer cannot enter in Raster)
                         # There was no WFS layer with this identifier - try WCS
                         try:
                                 logging.debug('layer "' + self.layerMetadata.id + '" - download raster data from WCS in GeoTIFF format')
-                                self.writeTiffData(workspacepath)
+                                self.writeTiffData(workspacepath, onlyCheck)
                         except Exception as e:
                                 logging.error("error while downloading raster file: " + str(e))
                                 someError = True
                                 pass
-                        # Todo - test the raster really was downloaded because some error are not raised as exceptions:
-                        # ERROR 1: Operation timed out after 30001 milliseconds with 0 bytes received
                         pass
                 except Exception as e:
                         logging.warning('error while downloading vector data: ' + str(e))
@@ -279,7 +294,7 @@ class LayerDownloader:
                                 logging.debug('File "' + filename + '" is no valid. Overwrite file.')
                                 return True
                 except:
-                        logging.warning('Error while validating file. Overwrite file')
+                        logging.warning('Error while validating file. Overwrite file.')
                         return True
 
                 # File is valid - check if its cache is still valid
@@ -288,7 +303,7 @@ class LayerDownloader:
                                 logging.debug('File "' + filename + '" is too old. Overwrite file.')
                                 return True
                 except:
-                        logging.warning('Error while checking cache expiration time. Overwrite file')
+                        logging.warning('Error while checking cache expiration time. Overwrite file.')
                         return True
 
                 # File cache is still valid - force overwriting ?
@@ -298,3 +313,34 @@ class LayerDownloader:
                 else:
                         logging.debug('The file exists and will not be updated. ' + filename)
                         return False
+
+        def checkFile(self, filename):
+                # Check if file exists
+                try:
+                        if not self.testIfFileExists(filename):
+                                logging.warning('File "' + filename + '" does not exist.')
+                                return
+                except:
+                        logging.warning('Error while checking file existence.')
+                        return
+
+                # File exists - check if it is valid
+                try:
+                        if not self.testIfFileIsValid(filename):
+                                logging.warning('File "' + filename + '" is no valid.')
+                                return
+                except:
+                        logging.warning('Error while validating file.')
+                        return
+
+                # File is valid - check if its cache is still valid
+                try:
+                        if not self.testIfFileCacheIsStillValid(filename):
+                                logging.warning('File "' + filename + '" is too old.')
+                                return
+                except:
+                        logging.warning('Error while checking cache expiration time.')
+                        return
+
+                logging.info('File "' + filename + '" is OK.')
+                return
