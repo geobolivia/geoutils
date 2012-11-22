@@ -28,7 +28,7 @@ logging.basicConfig(format='%(asctime)s %(levelname)s\t%(message)s', datefmt='%d
 #  http://dwins.github.com/gsconfig.py/
 
 class LayerDownloader:
-	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', cacheTimeout=60*60*24, forceOverwrite=False):
+	def __init__(self, restConnection=None, layerMetadata=None, geoserverUrl='http://www.geo.gob.bo/geoserver/', cacheTimeout=60*60*24*7, forceOverwrite=False):
                 self.layerMetadata = layerMetadata
                 if layerMetadata is None:
                         self.workspace = None
