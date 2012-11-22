@@ -255,12 +255,26 @@ class LayerDownloader:
                 return os.path.isfile(filename)
 
         def testIfFileIsValid(self, filename):
-                # Check if the size is superior to 100 Bytes
-                statinfo = os.stat(filename)
-                if statinfo.st_size <= 100:
-                        return False
+                tmp = os.path.splitext(filename)
 
-                return True
+                # Check if the size is superior to 100 Bytes
+                if tmp[1] == '.shp':
+                        statinfo = os.stat(filename)
+                        if statinfo.st_size <= 100:
+                                return False
+
+                # Open the file and check if it is HTML (= error in GeoNetwork)
+                if tmp[1] == '.xml' or tmp[1] == '.pdf':
+                        with open(filename, 'rt') as f:
+                                firstLine = f.readline()
+                                try:
+                                        htmlIndex = firstLine.index('html')
+                                except ValueError as e:
+                                        # This is not an HTML file - seems good
+                                        return True
+                                if htmlIndex:
+                                        # This is an HTML file - it's a GeoNetwork error
+                                        return False
 
         def testIfFileCacheIsStillValid(self, filename):
                 try:
