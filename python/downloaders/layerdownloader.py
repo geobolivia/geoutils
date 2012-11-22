@@ -18,7 +18,7 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 
 import logging
 
-logging.basicConfig(format='%(asctime)s %(levelname)s\t%(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s\t%(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.WARNING)
 
 # Libraries
 # ogr: WFS, SHP
