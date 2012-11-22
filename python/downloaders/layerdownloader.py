@@ -153,7 +153,10 @@ class LayerDownloader:
 
                 try:
                         # TODO use a function for showing copy progress
-                        gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0, ['TILED=YES', 'COMPRESS=JPEG'])
+                        try:
+                                gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0, ['TILED=YES', 'COMPRESS=JPEG'])
+                        except:
+                                gtiffds = gtiffdriver.CreateCopy(gtifffilename, wcsds, 0, ['TILED=YES', 'COMPRESS=DEFLATE'])
                         gtiffds = None
                         wcsds = None
                 except:
