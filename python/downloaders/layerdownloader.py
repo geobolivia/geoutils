@@ -318,7 +318,15 @@ class LayerDownloader:
                 # Check if file exists
                 try:
                         if not self.testIfFileExists(filename):
-                                logging.warning('File "' + filename + '" does not exist.')
+                                # TODO better check between vector and raster
+                                tmp = os.path.splitext(filename)
+                                if tmp[1] == '.shp':
+                                        filename = tmp[0] + '.tiff'
+                                        self.checkFile(filename)
+                                elif tmp[1] == '.tiff':
+                                        logging.warning('Files "' + tmp[0] + '.shp" and "' + filename + '" do not exist.')
+                                else:
+                                        logging.warning('File "' + filename + '" does not exist.')
                                 return
                 except:
                         logging.warning('Error while checking file existence.')
