@@ -276,6 +276,9 @@ class LayerDownloader:
                                         # This is an HTML file - it's a GeoNetwork error
                                         return False
 
+                # Else: the file is valid
+                return True
+
         def testIfFileCacheIsStillValid(self, filename):
                 try:
                         modificationTime = os.path.getctime(filename)
