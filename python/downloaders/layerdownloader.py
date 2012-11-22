@@ -1,7 +1,9 @@
 from geoserver.catalog import Catalog
 
 from osgeo import ogr
+ogr.UseExceptions()
 from osgeo import gdal
+gdal.UseExceptions()
 
 from re import compile
 from re import split
