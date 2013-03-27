@@ -12,22 +12,24 @@ se encuentra aprox en la linea "116"
 		logger.warning("GET %s", rest_url)
 		response, content = self.http.request(rest_url)
 		if response.status == 200:**
-			self._cache[rest_url] = (datetime.now(), content)**
+			self._cache[rest_url] = (datetime.now(), content)
 ```
  
 INSTALAR
 --------
-<pre>
+
+```
 sudo apt-get install python-httplib2
 sudo apt-get install gdal-bin
 sudo aptitude install python-pip
 sudo easy_install owslib
 sudo pip install gsconfig
-</pre>
+```
 
 EJECUTAR
 --------
-<pre>
+
+```
 sudo ./owsdl_livedvd.py
-</pre>
+```
 
