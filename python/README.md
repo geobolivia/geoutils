@@ -6,13 +6,13 @@ la solucion por el momento es adicionar las siguientes lineas, en la funcion "ge
 del archivo **/usr/local/lib/python2.7/dist-packages/geoserver/catalog.py**
 
 se encuentra aprox en la linea "116"
-<pre>
+```
 	def get_xml(self, rest_url):
 	    logger.warning("GET %s", rest_url)
 	    **response, content = self.http.request(rest_url)
-	    if response.status == 200:
+	    if response.status == 200:**
 	       self._cache[rest_url] = (datetime.now(), content)**
-</pre>
+```
  
 INSTALAR
 --------
