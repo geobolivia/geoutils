@@ -11,7 +11,7 @@ se encuentra aprox en la linea "116"
 	def get_xml(self, rest_url):
 		logger.warning("GET %s", rest_url)
 		response, content = self.http.request(rest_url)
-		if response.status == 200:**
+		if response.status == 200:
 			self._cache[rest_url] = (datetime.now(), content)
 ```
  
@@ -21,14 +21,15 @@ INSTALAR
 ```
 sudo apt-get install python-httplib2
 sudo apt-get install gdal-bin
-sudo aptitude install python-pip
+sudo apt-get install python-pip
+sudo apt-get install python-unidecode
 sudo easy_install owslib
 sudo pip install gsconfig
 ```
 
 EJECUTAR
 --------
-
+El script "owsdl_livedvd.py" permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
 ```
 sudo ./owsdl_livedvd.py
 ```
