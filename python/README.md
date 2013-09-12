@@ -19,6 +19,7 @@ INSTALAR
 --------
 
 ```
+sudo apt-get install python-gdal
 sudo apt-get install python-httplib2
 sudo apt-get install gdal-bin
 sudo apt-get install python-pip
