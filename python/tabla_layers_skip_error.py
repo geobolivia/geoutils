@@ -5,16 +5,21 @@
 # Parametros: ninguno
 
 from geoserver.catalog import Catalog
+from time import gmtime, strftime
 import sys
 import csv
-c = csv.writer(open("TLayers-03042014.csv", "wb"), delimiter=';', quotechar='|')
+import getpass
 
+c = csv.writer(open("TLayers "+strftime("%Y-%m-%d %H%M%S", gmtime())+".csv", "wb"), delimiter=';', quotechar='|')
 
-user = 'USER'
-password = 'PASS'
+print "Usuario y contrasenia de Geoserver"
 
+user = raw_input("User: ")
+password = getpass.getpass('Password: ')
+geoserver = "http://geo.gob.bo/geoserver/rest"
 
-cat = Catalog("http://geo.gob.bo/geoserver/rest", user, password)
+print "Conectandose a "+geoserver
+cat = Catalog(geoserver, user, password)
 
 # Recuperar los datos
 all_layers = cat.get_layers()
@@ -58,7 +63,6 @@ c.writerow([\
 #"latlon_bbox ",\
 #"enabled"\
 
-print "hola"
 for i,that_layer in enumerate(all_layers):
 	try:	
 		Li = i
