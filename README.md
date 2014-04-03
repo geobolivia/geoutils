@@ -25,10 +25,10 @@ sudo pip install gsconfig
 ```
 
 Archivos
-=======
+--------
 
-owsdl_livedvd.py: Permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
-tabla_layers_skip_error.py: Permite crear un archivo CSV, con la información de todas las capas almacenadas en GeoServer
+* owsdl_livedvd.py: Permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
+* tabla_layers_skip_error.py: Permite crear un archivo CSV, con la información de todas las capas almacenadas en GeoServer
 
 EJECUTAR
 --------
