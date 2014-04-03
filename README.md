@@ -37,3 +37,6 @@ sudo pip install gsconfig
 sudo ./owsdl_livedvd.py
 ```
 
+### DOCUMENTACION
+
+https://github.com/boundlessgeo/gsconfig
