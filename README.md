@@ -1,3 +1,5 @@
+# Scripts para geoserver
+
 Para poder descargar el archivo SLD, es necesario tener una cuenta de usuario en geoserver
 Si no se cuenta con una cuenta de usuario, la respuesta http es: [401 No autorizado]
 
@@ -15,8 +17,7 @@ se encuentra aprox en la linea "116"
 			self._cache[rest_url] = (datetime.now(), content)
 ```
  
-INSTALAR
---------
+### INSTALAR
 
 ```
 sudo apt-get install python-gdal python-httplib2 gdal-bin python-pip python-unidecode
@@ -24,14 +25,13 @@ sudo easy_install owslib
 sudo pip install gsconfig
 ```
 
-Archivos
---------
+### ARCHIVOS
 
 * owsdl_livedvd.py: Permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
+
 * tabla_layers_skip_error.py: Permite crear un archivo CSV, con la información de todas las capas almacenadas en GeoServer
 
-EJECUTAR
---------
+### EJECUTAR
 
 ```
 sudo ./owsdl_livedvd.py

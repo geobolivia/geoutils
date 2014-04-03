@@ -10,8 +10,8 @@ import csv
 c = csv.writer(open("TLayers-03042014.csv", "wb"), delimiter=';', quotechar='|')
 
 
-user = 'dmendoza'
-password = 'jB0ssMozill4'
+user = 'USER'
+password = 'PASS'
 
 
 cat = Catalog("http://geo.gob.bo/geoserver/rest", user, password)
