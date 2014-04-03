@@ -19,18 +19,20 @@ INSTALAR
 --------
 
 ```
-sudo apt-get install python-gdal
-sudo apt-get install python-httplib2
-sudo apt-get install gdal-bin
-sudo apt-get install python-pip
-sudo apt-get install python-unidecode
+sudo apt-get install python-gdal python-httplib2 gdal-bin python-pip python-unidecode
 sudo easy_install owslib
 sudo pip install gsconfig
 ```
 
+Archivos
+=======
+
+owsdl_livedvd.py: Permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
+tabla_layers_skip_error.py: Permite crear un archivo CSV, con la información de todas las capas almacenadas en GeoServer
+
 EJECUTAR
 --------
-El script "owsdl_livedvd.py" permite descargar los archivos SLD, PDF, SHP, XML. conectandose a geoserver
+
 ```
 sudo ./owsdl_livedvd.py
 ```
